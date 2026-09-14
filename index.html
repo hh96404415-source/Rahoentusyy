@@ -635,7 +635,7 @@
       }));
     }
 
-    // 嚴格加入防呆保護，避免回傳 undefined 造成前端崩潰
+    // 嚴格加入防呆保護，確保永遠回傳合法物件
     getAlQtyList() { this._handleResult(fetchCache().then(d => d.alQty || { columns: [], data: [], locsCount: 0, plCount: 0, totalAlQty: 0 })); }
     getGaoData() { this._handleResult(fetchCache().then(d => d.gao || { headers: [], data: [], rowCount: 0 })); }
     getRecData() { this._handleResult(fetchCache().then(d => d.rec || { headers: [], data: [], rowCount: 0 })); }
@@ -1078,7 +1078,7 @@
     
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('ODStatusProcess', 'lastOrderStatusRefreshedTime');
-      renderOrderStatusData(res);
+      renderOrderStatusData(res || { headers: [], totals: [], data: [] });
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
        document.getElementById(msgId).textContent="ERROR:"+e.message; 
@@ -1163,7 +1163,7 @@
 
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime');
-      renderGaoData(res);
+      renderGaoData(res || { headers: [], data: [], rowCount: 0 });
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
        document.getElementById(msgId).textContent="ERROR:"+e.message;
@@ -1212,7 +1212,7 @@
     
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('ReceivedSyncProcess', 'lastRecRefreshedTime');
-      renderRecData(res);
+      renderRecData(res || { headers: [], data: [], rowCount: 0 });
     }).withFailureHandler(e => { stopLoadingMsg(msgId, timer); document.getElementById(msgId).textContent="ERROR:"+e.message; }).getRecData();
   }
 
@@ -1256,11 +1256,12 @@
     let timer = startLoadingMsg('dbMsgArea', 'DB STAT');
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg('dbMsgArea', timer);
-      let ts = "--:--"; if(res.data) { const t=res.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
-      document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = res.rowCount||0;
-      let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
-      (res.data||[]).forEach(i => {
-        h+=`<tr>`; (res.headers || []).forEach(c => {
+      let r = res || { headers: [], data: [], rowCount: 0 };
+      let ts = "--:--"; if(r.data) { const t=r.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
+      document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = r.rowCount||0;
+      let h = `<table class="compact-table"><thead><tr>`; (r.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+      (r.data||[]).forEach(i => {
+        h+=`<tr>`; (r.headers || []).forEach(c => {
           let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let cls="";
           if(cln==="SCND") cls="text-green"; else if(cln==="-SCN"){ cls="text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
           if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
@@ -1277,10 +1278,11 @@
       stopLoadingMsg('mapMsgArea', timer);
       fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastMapRefreshedTime');
 
-      if (!res || !res.grid || res.grid.length === 0) {
+      let r = res || { grid: [], rowCount: 0 };
+      if (!r.grid || r.grid.length === 0) {
         document.getElementById('mapMsgArea').textContent = "NO MAP DATA FOUND"; return;
       }
-      const grid = res.grid;
+      const grid = r.grid;
       document.getElementById('mapSummaryBox').style.display = "flex"; document.getElementById('mapFilterGroup').style.display = "flex"; 
 
       let h = `<table class="compact-table map-table">`;
@@ -1342,7 +1344,7 @@
 
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastLpRefreshedTime');
-      renderLoadplanData(res);
+      renderLoadplanData(res || { headers: [], data: [], rowCount: 0 });
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
        document.getElementById(msgId).textContent="ERROR:"+e.message;
@@ -1417,7 +1419,7 @@
 
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastUphRefreshedTime');
-      renderUphData(res);
+      renderUphData(res || { headers: [], data: [], rowCount: 0 });
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
        document.getElementById(msgId).textContent="ERROR:"+e.message;
