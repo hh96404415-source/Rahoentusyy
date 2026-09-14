@@ -497,8 +497,7 @@
 
 <script>
   /**
-   * Rahoentusy WMS - Edge Cache Adapter (Firebase 零延遲快取轉接層)
-   * 負責攔截前端的 google.script.run 請求，改由 Firebase 讀取，並保留寫入至 GAS Web App。
+   * Rahoentusy WMS - Edge Cache Adapter
    */
   window.EDGE_CONFIG = {
     FIREBASE_URL: "https://wms-cache-default-rtdb.asia-southeast1.firebasedatabase.app/wms_cache.json",
@@ -507,14 +506,45 @@
 
   let cachedData = null;
 
+  // 🌟 修復重點 2：前端接手將特殊標籤解碼還原，讓 UI 無縫接軌
+  function decodeFirebaseKeys(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(item => decodeFirebaseKeys(item));
+    } else if (obj !== null && typeof obj === 'object') {
+      let newObj = {};
+      for (let key in obj) {
+        let decodedKey = key
+          .replace(/__dot__/g, ".")
+          .replace(/__dlr__/g, "$")
+          .replace(/__hsh__/g, "#")
+          .replace(/__lsb__/g, "[")
+          .replace(/__rsb__/g, "]")
+          .replace(/__sls__/g, "/");
+        newObj[decodedKey] = decodeFirebaseKeys(obj[key]);
+      }
+      return newObj;
+    }
+    if (typeof obj === 'string') {
+      return obj
+        .replace(/__dot__/g, ".")
+        .replace(/__dlr__/g, "$")
+        .replace(/__hsh__/g, "#")
+        .replace(/__lsb__/g, "[")
+        .replace(/__rsb__/g, "]")
+        .replace(/__sls__/g, "/");
+    }
+    return obj;
+  }
+
   async function fetchCache() {
     if (cachedData) return cachedData;
     try {
       const response = await fetch(window.EDGE_CONFIG.FIREBASE_URL);
       if (!response.ok) throw new Error("Firebase fetch failed");
-      cachedData = await response.json();
-      console.log("✅ [Edge Cache] 資料已從 Firebase 成功載入！");
-      return cachedData || {};
+      const rawData = await response.json();
+      cachedData = decodeFirebaseKeys(rawData) || {};
+      console.log("✅ [Edge Cache] 資料已成功載入與解碼！");
+      return cachedData;
     } catch (error) {
       console.error("❌ 快取讀取失敗:", error);
       return {};
@@ -522,28 +552,12 @@
   }
 
   class GasMockRunner {
-    constructor() {
-      this.successHandler = null;
-      this.failureHandler = null;
-    }
-
-    withSuccessHandler(handler) {
-      this.successHandler = handler;
-      return this;
-    }
-
-    withFailureHandler(handler) {
-      this.failureHandler = handler;
-      return this;
-    }
-
+    constructor() { this.successHandler = null; this.failureHandler = null; }
+    withSuccessHandler(handler) { this.successHandler = handler; return this; }
+    withFailureHandler(handler) { this.failureHandler = handler; return this; }
     _handleResult(promise) {
-      promise.then(res => {
-        if (this.successHandler) this.successHandler(res);
-      }).catch(err => {
-        if (this.failureHandler) this.failureHandler(err);
-        else console.error("Uncaught GAS Mock Error:", err);
-      });
+      promise.then(res => { if (this.successHandler) this.successHandler(res); })
+             .catch(err => { if (this.failureHandler) this.failureHandler(err); else console.error("GAS Mock Error:", err); });
     }
 
     verifyPinCode(pin) {
@@ -551,23 +565,13 @@
         const authList = data.auth || [];
         const inputPin = String(pin).trim();
         const user = authList.find(u => u.pin === inputPin);
-        
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
-        
-        const tabMapping = {
-          "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus",
-          "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp",
-          "LP": "lp", "UPH": "uph"
-        };
-        
+        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph" };
         let permissions = [];
         for (let key in user.permissions) {
           let frontendKey = tabMapping[key];
-          if (frontendKey && (user.isAllOpen || user.permissions[key])) {
-            permissions.push(frontendKey);
-          }
+          if (frontendKey && (user.isAllOpen || user.permissions[key])) permissions.push(frontendKey);
         }
-        
         if (permissions.length === 0) return { success: false, error: 'No permissions assigned.' };
         return { success: true, name: user.name, permissions: permissions };
       }));
@@ -577,32 +581,14 @@
       this._handleResult(fetchCache().then(data => {
         const inventory = data.inventory || [];
         const targetLoc = String(loc).trim().toUpperCase();
-        
-        const resultData = inventory.filter(item => {
-          return String(item.LOCATION_ID || "").toUpperCase() === targetLoc;
-        }).sort((a, b) => {
-          let tagA = String(a.TAG_ID || "").toUpperCase();
-          let tagB = String(b.TAG_ID || "").toUpperCase();
-          return tagA.localeCompare(tagB);
-        });
-
-        let sumQty = 0;
-        let uniqueTags = new Set();
-        let uniquePallets = new Set();
-        
+        const resultData = inventory.filter(item => String(item.LOCATION_ID || "").toUpperCase() === targetLoc).sort((a, b) => String(a.TAG_ID || "").toUpperCase().localeCompare(String(b.TAG_ID || "").toUpperCase()));
+        let sumQty = 0; let uniqueTags = new Set(); let uniquePallets = new Set();
         resultData.forEach(item => {
           sumQty += parseFloat(item.QTY) || 0;
           if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
           if (item["Pallet ID"] && item["Pallet ID"] !== "-") uniquePallets.add(item["Pallet ID"]);
         });
-
-        return {
-          data: resultData,
-          uniqueTags: uniqueTags.size,
-          uniquePallets: uniquePallets.size,
-          totalQty: sumQty,
-          columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"]
-        };
+        return { data: resultData, uniqueTags: uniqueTags.size, uniquePallets: uniquePallets.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
       }));
     }
 
@@ -610,40 +596,26 @@
       this._handleResult(fetchCache().then(data => {
         const inventory = data.inventory || [];
         const targetSku = String(sku).trim().toUpperCase();
-        
-        const resultData = inventory.filter(item => {
-          return String(item.SUPPLIER_SKU || "").toUpperCase() === targetSku;
-        });
-
-        let sumQty = 0;
-        let uniqueLocs = new Set();
-        let uniqueTags = new Set();
-        
+        const resultData = inventory.filter(item => String(item.SUPPLIER_SKU || "").toUpperCase() === targetSku);
+        let sumQty = 0; let uniqueLocs = new Set(); let uniqueTags = new Set();
         resultData.forEach(item => {
           sumQty += parseFloat(item.QTY) || 0;
           if (item.LOCATION_ID && item.LOCATION_ID !== "-") uniqueLocs.add(item.LOCATION_ID);
           if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
         });
-
-        return {
-          data: resultData,
-          uniqueLocations: uniqueLocs.size,
-          uniqueTags: uniqueTags.size,
-          totalQty: sumQty,
-          columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"]
-        };
+        return { data: resultData, uniqueLocations: uniqueLocs.size, uniqueTags: uniqueTags.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
       }));
     }
 
-    // 嚴格加入防呆保護，確保永遠回傳合法物件
-    getAlQtyList() { this._handleResult(fetchCache().then(d => d.alQty || { columns: [], data: [], locsCount: 0, plCount: 0, totalAlQty: 0 })); }
-    getGaoData() { this._handleResult(fetchCache().then(d => d.gao || { headers: [], data: [], rowCount: 0 })); }
-    getRecData() { this._handleResult(fetchCache().then(d => d.rec || { headers: [], data: [], rowCount: 0 })); }
-    getDbData() { this._handleResult(fetchCache().then(d => d.db || { headers: [], data: [], rowCount: 0 })); }
-    getOrderStatusData() { this._handleResult(fetchCache().then(d => d.orderStatus || { headers: [], totals: [], data: [], rowCount: 0 })); }
-    getMapData() { this._handleResult(fetchCache().then(d => d.map || { grid: [], rowCount: 0 })); }
-    getLoadplanData() { this._handleResult(fetchCache().then(d => d.loadplan || { headers: [], data: [], rowCount: 0 })); }
-    getUphData() { this._handleResult(fetchCache().then(d => d.uph || { headers: [], data: [], rowCount: 0 })); }
+    // 🌟 修復重點 3：終極屬性空值防護，確保回傳的物件內必定有 headers 與 data 陣列
+    getAlQtyList() { this._handleResult(fetchCache().then(d => { let r = d.alQty || {}; return { columns: r.columns||[], data: r.data||[], locsCount: r.locsCount||0, plCount: r.plCount||0, totalAlQty: r.totalAlQty||0 }; })); }
+    getGaoData() { this._handleResult(fetchCache().then(d => { let r = d.gao || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
+    getRecData() { this._handleResult(fetchCache().then(d => { let r = d.rec || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
+    getDbData() { this._handleResult(fetchCache().then(d => { let r = d.db || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
+    getOrderStatusData() { this._handleResult(fetchCache().then(d => { let r = d.orderStatus || {}; return { headers: r.headers||[], totals: r.totals||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
+    getMapData() { this._handleResult(fetchCache().then(d => { let r = d.map || {}; return { grid: r.grid||[], rowCount: r.rowCount||0 }; })); }
+    getLoadplanData() { this._handleResult(fetchCache().then(d => { let r = d.loadplan || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
+    getUphData() { this._handleResult(fetchCache().then(d => { let r = d.uph || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
 
     saveAuditRecord(payload) {
       this._handleResult(
@@ -657,26 +629,19 @@
 
   window.google = window.google || {};
   window.google.script = window.google.script || {};
-  
   window.google.script.run = new Proxy({}, {
     get: function(target, prop) {
       return function(...args) {
         const runner = new GasMockRunner();
-        if (typeof runner[prop] === 'function') {
-          setTimeout(() => runner[prop](...args), 0);
-        } else if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') {
-          return runner[prop](...args);
-        } else {
-          console.error(`[Edge Cache] 未實作的 GAS 方法: ${prop}`);
-        }
+        if (typeof runner[prop] === 'function') setTimeout(() => runner[prop](...args), 0);
+        else if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') return runner[prop](...args);
+        else console.error(`[Edge Cache] 未實作的 GAS 方法: ${prop}`);
         return runner;
       };
     }
   });
 
   fetchCache().catch(e => console.log("快取預載失敗"));
-
-})();
 </script>
 
 <script>
@@ -1113,7 +1078,7 @@
       else if (genderValue.includes("ACCESSORY")) { specialStyle = "color:#ff003c; font-weight:700;"; categoryClass = "cat-acc"; } 
       else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
-      if(!isT && i["S/O"] && i["S/O"] !== "-") { 
+      if(!isT && soKey && i[soKey] && i[soKey] !== "-") { 
         tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); 
         let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal;
         if (pcValue.includes("GOH")) pGoh += pcsVal;
