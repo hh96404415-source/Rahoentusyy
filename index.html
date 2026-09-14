@@ -86,13 +86,13 @@
 
     .search-box { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
     
-    input[type="text"], input[type="password"] {
+    input[type="text"] {
       flex: 1; min-width: 50px; padding: 8px 12px; font-size: 16px !important;
       background-color: var(--bg-deep); color: var(--text-main); 
       border: 1px solid var(--bg-hover); border-radius: 6px; 
       font-family: 'Roboto Mono', monospace;
     }
-    input[type="text"]:focus, input[type="password"]:focus {
+    input[type="text"]:focus {
       outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
     }
 
@@ -185,12 +185,17 @@
     .map-table td:first-child, .map-table th:first-child {
       position: sticky; left: 0; z-index: 5; background: var(--bg-card); color: var(--status-yellow) !important; font-weight: 700; font-size: 14px !important;
     }
-    .map-table td:nth-child(2), .map-table th:nth-child(2) { font-size: 14px !important; font-weight: 700; }
+    .map-table td:nth-child(2), .map-table th:nth-child(2) {
+      font-size: 14px !important; font-weight: 700;
+    }
     
     .lvl-3 { color: #d946ef !important; } 
     .lvl-2 { color: #38bdf8 !important; } 
     .lvl-1 { color: #86efac !important; } 
-    .map-row-separator td, .map-row-separator th { border-bottom: 2px solid rgba(56, 189, 248, 0.4) !important; }
+    .map-row-separator td, .map-row-separator th {
+      border-bottom: 2px solid rgba(56, 189, 248, 0.4) !important;
+    }
+
     .map-zero { color: rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.1); font-weight: normal; }
     .map-low { color: #86efac; background: rgba(52, 211, 153, 0.1); }
     .map-mid { color: #fde047; background: rgba(251, 191, 36, 0.15); }
@@ -382,6 +387,7 @@
 
   <div id="gaoView" class="view-section" style="display: none;">
     <div id="gaoMsgArea" class="message"></div>
+    
     <div class="summary-box-compact" id="gaoSummaryBox" style="display: none;">
       <div class="summary-item-compact">ROWS:<span id="totGaoRows">0</span></div>
       <div class="summary-item-compact">CBM:<span id="totGaoCbm" style="color:var(--accent-blue);">0</span></div>
@@ -397,6 +403,7 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadGaoDataList(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
+
     <div id="gaoFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterGao('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="GOH" style="color:#d946ef;" onclick="filterGao('GOH')">GOH</button>
@@ -405,6 +412,7 @@
       <button class="filter-btn-compact" data-filter="BDW" style="color:#86efac;" onclick="filterGao('BDW')">BDW</button>
       <button class="filter-btn-compact" data-filter="OTH" style="color:var(--text-main);" onclick="filterGao('OTH')">OTH</button>
     </div>
+
     <div class="compact-table-wrapper"><div id="gaoTableContainer"></div></div>
   </div>
 
@@ -436,6 +444,7 @@
 
   <div id="mapView" class="view-section" style="display: none;">
     <div id="mapMsgArea" class="message"></div>
+    
     <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
       <div class="summary-item-compact" style="flex: 1;">MAP LAYOUT: <span id="totMapCells">MAP1-9 (A1:AO28)</span></div>
       <div style="display:flex; align-items:center; gap:4px;">
@@ -443,6 +452,7 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadMapData(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
+
     <div id="mapFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterMap('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="01" onclick="filterMap('01')">01</button>
@@ -455,6 +465,7 @@
       <button class="filter-btn-compact" data-filter="08" onclick="filterMap('08')">08</button>
       <button class="filter-btn-compact" data-filter="09" onclick="filterMap('09')">09</button>
     </div>
+
     <div class="compact-table-wrapper"><div id="mapTableContainer"></div></div>
   </div>
 
@@ -485,132 +496,192 @@
 </div>
 
 <script>
-  const EDGE_CONFIG = {
-    // 您建立的 Firebase 快取網址
+  /**
+   * Rahoentusy WMS - Edge Cache Adapter (Firebase 零延遲快取轉接層)
+   * 負責攔截前端的 google.script.run 請求，改由 Firebase 讀取，並保留寫入至 GAS Web App。
+   */
+  window.EDGE_CONFIG = {
     FIREBASE_URL: "https://wms-cache-default-rtdb.asia-southeast1.firebasedatabase.app/wms_cache.json",
-    // 您的 Google Apps Script 後端網址 (處理寫入)
-    GAS_EXEC_URL: "https://script.google.com/macros/s/AKfycbxNb8YR1DkHnoTRDEPJHhyEVkRNBFGxAI1nWVhdlbXOQL8MDiKojPzxfNqK_ILrdWXCPA/exec"
+    GAS_EXEC_URL: "https://script.google.com/macros/s/AKfycbxn95iB72ljeNugSzIT7vpviDp-bwXiA8HnPQ3UXxLFOnxafBc8imVU5oyvhjOSdcaX/exec"
   };
 
   let cachedData = null;
-  let isFetchingCache = false;
-  let cachePromise = null;
 
-  // 從 Firebase 獲取最新快取資料
-  function fetchCache() {
-    if (cachedData) return Promise.resolve(cachedData);
-    if (isFetchingCache) return cachePromise;
-    
-    isFetchingCache = true;
-    cachePromise = fetch(EDGE_CONFIG.FIREBASE_URL)
-      .then(res => {
-        if (!res.ok) throw new Error('Firebase Network Error');
-        return res.json();
-      })
-      .then(data => {
-        cachedData = data;
-        isFetchingCache = false;
-        console.log("✅ [Edge Cache] 資料已從 Firebase 光速載入完成！");
-        return data;
-      })
-      .catch(err => {
-        isFetchingCache = false;
-        console.error("❌ 快取讀取失敗，請確認 Firebase 設定:", err);
-        throw err;
-      });
-    return cachePromise;
-  }
-
-  // 背景預載快取
-  fetchCache().catch(()=>{});
-
-  // 攔截原生 GAS 方法，導向 Firebase
-  function createGasRunner() {
-    return {
-      _onSuccess: null,
-      _onFailure: null,
-      withSuccessHandler: function(callback) { this._onSuccess = callback; return this; },
-      withFailureHandler: function(callback) { this._onFailure = callback; return this; },
-      
-      _handleResult: function(promise) {
-        promise
-          .then(res => { if (this._onSuccess) this._onSuccess(res); })
-          .catch(err => { if (this._onFailure) this._onFailure(err); });
-      },
-
-      // 攔截認證
-      verifyPinCode: function(pin) {
-        this._handleResult(fetchCache().then(data => {
-          const authList = data.auth || [];
-          const inputPin = String(pin).trim();
-          const user = authList.find(u => u.pin === inputPin);
-          if (!user) return { success: false, error: 'Invalid PIN Code.' };
-          
-          let perms = [];
-          const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph" };
-          for (let key in user.permissions) {
-            let frontendKey = tabMapping[key];
-            if (frontendKey && (user.isAllOpen || user.permissions[key])) {
-              perms.push(frontendKey);
-            }
-          }
-          if (perms.length === 0) return { success: false, error: 'No permissions assigned.' };
-          return { success: true, name: user.name, permissions: perms };
-        }));
-      },
-
-      // 攔截搜尋 SKU
-      searchSupplierSku: function(sku) {
-        this._handleResult(fetchCache().then(data => {
-           const inventory = data.inventory || [];
-           const targetSku = String(sku).trim().toUpperCase();
-           const resultData = inventory.filter(item => String(item.SUPPLIER_SKU || "").toUpperCase() === targetSku);
-           return { data: resultData }; // 前端自動計算唯一數量
-        }));
-      },
-
-      // 攔截搜尋 Location
-      searchLocation: function(loc) {
-        this._handleResult(fetchCache().then(data => {
-           const inventory = data.inventory || [];
-           const targetLoc = String(loc).trim().toUpperCase();
-           const resultData = inventory.filter(item => String(item.LOCATION_ID || "").toUpperCase() === targetLoc);
-           return { data: resultData };
-        }));
-      },
-
-      // 將原本對 GAS 的請求全部導向讀取 Firebase 快取對應節點
-      getAlQtyList: function() { this._handleResult(fetchCache().then(d => d.alQty)); },
-      getOrderStatusData: function() { this._handleResult(fetchCache().then(d => d.orderStatus)); },
-      getGaoData: function() { this._handleResult(fetchCache().then(d => d.gao)); },
-      getRecData: function() { this._handleResult(fetchCache().then(d => d.rec)); },
-      getDbData: function() { this._handleResult(fetchCache().then(d => d.db)); },
-      getMapData: function() { this._handleResult(fetchCache().then(d => d.map)); },
-      getLoadplanData: function() { this._handleResult(fetchCache().then(d => d.loadplan)); },
-      getUphData: function() { this._handleResult(fetchCache().then(d => d.uph)); },
-
-      // 寫入請求 -> 保持 POST 回 Google Apps Script
-      saveAuditRecord: function(payload) {
-        this._handleResult(
-          fetch(EDGE_CONFIG.GAS_EXEC_URL, {
-            method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'saveAuditRecord', payload: payload })
-          }).then(res => res.json())
-        );
-      }
-    };
-  }
-
-  // 將原生 window.google 覆寫為我們的快取攔截器
-  window.google = {
-    script: {
-      get run() { return createGasRunner(); }
+  async function fetchCache() {
+    if (cachedData) return cachedData;
+    try {
+      const response = await fetch(window.EDGE_CONFIG.FIREBASE_URL);
+      if (!response.ok) throw new Error("Firebase fetch failed");
+      cachedData = await response.json();
+      console.log("✅ [Edge Cache] 資料已從 Firebase 成功載入！");
+      return cachedData || {};
+    } catch (error) {
+      console.error("❌ 快取讀取失敗:", error);
+      return {};
     }
-  };
+  }
 
-  /* =======================================================
-     從這裡開始完全是您原始的 UI 邏輯與功能，無任何修改
-     ======================================================= */
+  class GasMockRunner {
+    constructor() {
+      this.successHandler = null;
+      this.failureHandler = null;
+    }
+
+    withSuccessHandler(handler) {
+      this.successHandler = handler;
+      return this;
+    }
+
+    withFailureHandler(handler) {
+      this.failureHandler = handler;
+      return this;
+    }
+
+    _handleResult(promise) {
+      promise.then(res => {
+        if (this.successHandler) this.successHandler(res);
+      }).catch(err => {
+        if (this.failureHandler) this.failureHandler(err);
+        else console.error("Uncaught GAS Mock Error:", err);
+      });
+    }
+
+    verifyPinCode(pin) {
+      this._handleResult(fetchCache().then(data => {
+        const authList = data.auth || [];
+        const inputPin = String(pin).trim();
+        const user = authList.find(u => u.pin === inputPin);
+        
+        if (!user) return { success: false, error: 'Invalid PIN Code.' };
+        
+        const tabMapping = {
+          "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus",
+          "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp",
+          "LP": "lp", "UPH": "uph"
+        };
+        
+        let permissions = [];
+        for (let key in user.permissions) {
+          let frontendKey = tabMapping[key];
+          if (frontendKey && (user.isAllOpen || user.permissions[key])) {
+            permissions.push(frontendKey);
+          }
+        }
+        
+        if (permissions.length === 0) return { success: false, error: 'No permissions assigned.' };
+        return { success: true, name: user.name, permissions: permissions };
+      }));
+    }
+
+    searchLocation(loc) {
+      this._handleResult(fetchCache().then(data => {
+        const inventory = data.inventory || [];
+        const targetLoc = String(loc).trim().toUpperCase();
+        
+        const resultData = inventory.filter(item => {
+          return String(item.LOCATION_ID || "").toUpperCase() === targetLoc;
+        }).sort((a, b) => {
+          let tagA = String(a.TAG_ID || "").toUpperCase();
+          let tagB = String(b.TAG_ID || "").toUpperCase();
+          return tagA.localeCompare(tagB);
+        });
+
+        let sumQty = 0;
+        let uniqueTags = new Set();
+        let uniquePallets = new Set();
+        
+        resultData.forEach(item => {
+          sumQty += parseFloat(item.QTY) || 0;
+          if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
+          if (item["Pallet ID"] && item["Pallet ID"] !== "-") uniquePallets.add(item["Pallet ID"]);
+        });
+
+        return {
+          data: resultData,
+          uniqueTags: uniqueTags.size,
+          uniquePallets: uniquePallets.size,
+          totalQty: sumQty,
+          columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"]
+        };
+      }));
+    }
+
+    searchSupplierSku(sku) {
+      this._handleResult(fetchCache().then(data => {
+        const inventory = data.inventory || [];
+        const targetSku = String(sku).trim().toUpperCase();
+        
+        const resultData = inventory.filter(item => {
+          return String(item.SUPPLIER_SKU || "").toUpperCase() === targetSku;
+        });
+
+        let sumQty = 0;
+        let uniqueLocs = new Set();
+        let uniqueTags = new Set();
+        
+        resultData.forEach(item => {
+          sumQty += parseFloat(item.QTY) || 0;
+          if (item.LOCATION_ID && item.LOCATION_ID !== "-") uniqueLocs.add(item.LOCATION_ID);
+          if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
+        });
+
+        return {
+          data: resultData,
+          uniqueLocations: uniqueLocs.size,
+          uniqueTags: uniqueTags.size,
+          totalQty: sumQty,
+          columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"]
+        };
+      }));
+    }
+
+    // 嚴格加入防呆保護，避免回傳 undefined 造成前端崩潰
+    getAlQtyList() { this._handleResult(fetchCache().then(d => d.alQty || { columns: [], data: [], locsCount: 0, plCount: 0, totalAlQty: 0 })); }
+    getGaoData() { this._handleResult(fetchCache().then(d => d.gao || { headers: [], data: [], rowCount: 0 })); }
+    getRecData() { this._handleResult(fetchCache().then(d => d.rec || { headers: [], data: [], rowCount: 0 })); }
+    getDbData() { this._handleResult(fetchCache().then(d => d.db || { headers: [], data: [], rowCount: 0 })); }
+    getOrderStatusData() { this._handleResult(fetchCache().then(d => d.orderStatus || { headers: [], totals: [], data: [], rowCount: 0 })); }
+    getMapData() { this._handleResult(fetchCache().then(d => d.map || { grid: [], rowCount: 0 })); }
+    getLoadplanData() { this._handleResult(fetchCache().then(d => d.loadplan || { headers: [], data: [], rowCount: 0 })); }
+    getUphData() { this._handleResult(fetchCache().then(d => d.uph || { headers: [], data: [], rowCount: 0 })); }
+
+    saveAuditRecord(payload) {
+      this._handleResult(
+        fetch(window.EDGE_CONFIG.GAS_EXEC_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'saveAuditRecord', payload: payload })
+        }).then(res => res.json())
+      );
+    }
+  }
+
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  
+  window.google.script.run = new Proxy({}, {
+    get: function(target, prop) {
+      return function(...args) {
+        const runner = new GasMockRunner();
+        if (typeof runner[prop] === 'function') {
+          setTimeout(() => runner[prop](...args), 0);
+        } else if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') {
+          return runner[prop](...args);
+        } else {
+          console.error(`[Edge Cache] 未實作的 GAS 方法: ${prop}`);
+        }
+        return runner;
+      };
+    }
+  });
+
+  fetchCache().catch(e => console.log("快取預載失敗"));
+
+})();
+</script>
+
+<script>
+  let apiQueue = Promise.resolve();
+
   function showSystemQrCode() {
     const overlay = document.getElementById('qrModalOverlay');
     const container = document.getElementById('sysQrCodeContainer');
@@ -724,6 +795,7 @@
     const tabBar = document.getElementById('mainTabBar');
     
     tabBar.innerHTML = '';
+
     perms.forEach(targetKey => {
       const info = TAB_INFO[targetKey];
       if (info) {
@@ -738,49 +810,6 @@
 
     if (perms.length > 0) { switchTab(perms[0]); } 
     else { document.getElementById('msgArea').textContent = "UNAUTHORIZED ACCESS."; }
-
-    setTimeout(() => {
-      const queue = perms.filter(p => !['search', 'audit'].includes(p));
-      silentPrefetchNext(queue);
-    }, 3000);
-  }
-
-  function silentPrefetchNext(queue) {
-    if (!queue || queue.length === 0) return;
-    const tab = queue.shift();
-    const cacheKey = 'wms_cache_' + tab;
-    
-    if (sessionStorage.getItem(cacheKey)) {
-      silentPrefetchNext(queue);
-      return;
-    }
-    
-    let actionName = "";
-    if (tab === 'list') actionName = 'getAlQtyList';
-    else if (tab === 'orderStatus') actionName = 'getOrderStatusData';
-    else if (tab === 'gao') actionName = 'getGaoData';
-    else if (tab === 'rec') actionName = 'getRecData';
-    else if (tab === 'db') actionName = 'getDbData';
-    else if (tab === 'map') actionName = 'getMapData';
-    else if (tab === 'lp') actionName = 'getLoadplanData';
-    else if (tab === 'uph') actionName = 'getUphData';
-
-    if (!actionName || !window.google.script.run[actionName]) {
-      silentPrefetchNext(queue);
-      return;
-    }
-
-    window.google.script.run
-      .withSuccessHandler(res => {
-        if (res && !res.error) {
-           sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: res }));
-        }
-        silentPrefetchNext(queue); 
-      })
-      .withFailureHandler(e => {
-        silentPrefetchNext(queue);
-      })
-      [actionName]();
   }
 
   let html5QrCode = null; let barcodeHtml5QrCode = null; let pendingBarcode = null; let lastDetected = null;
@@ -889,9 +918,6 @@
   }
 
   let currentTab = '';
-  let isAlListLoaded = false, isOrderStatusLoaded = false, isGaoLoaded = false, isRecLoaded = false, isDbLoaded = false, isMapLoaded = false;
-  let isLpLoaded = false, isUphLoaded = false; 
-
   const searchInput = document.getElementById('searchInput');
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); fetchData(); } });
 
@@ -975,11 +1001,10 @@
   }
 
   function loadAlList(force) {
-    if (isAlListLoaded && !force) return;
     let loadTimer = startLoadingMsg('listMsgArea', 'LIST');
     
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('listMsgArea', loadTimer); isAlListLoaded = true; fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastRefreshedTime');
+      stopLoadingMsg('listMsgArea', loadTimer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastRefreshedTime');
       document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0;
       document.getElementById('listSummaryBox').style.display = "flex";
       let h = `<table class="compact-table"><thead><tr>`;
@@ -1014,9 +1039,9 @@
     const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = "";
     const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
     
-    const countryIdx = res.headers.findIndex(h => h && h.toString().trim().toUpperCase() === "COUNTRY");
+    const countryIdx = (res.headers || []).findIndex(h => h && h.toString().trim().toUpperCase() === "COUNTRY");
     
-    res.headers.forEach((h, idx) => {
+    (res.headers || []).forEach((h, idx) => {
       if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,'');
       if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){
         let v = res.totals[idx] || (res.data||[]).reduce((a,r)=>a+(parseFloat(r[h])||0),0);
@@ -1025,9 +1050,9 @@
     });
     document.getElementById('orderStatusSummaryBox').style.display = "flex";
     
-    let h = `<table class="compact-table"><thead><tr>`; res.headers.forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr>`;
+    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr>`;
     if(res.totals && res.totals.length>0){
-      h+=`<tr class="gao-total-row">`; res.headers.forEach((c,i)=>{
+      h+=`<tr class="gao-total-row">`; (res.headers || []).forEach((c,i)=>{
         let v=res.totals[i]||""; const cln=c?c.toString().trim().toUpperCase():"";
         let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v;
         if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
@@ -1035,7 +1060,7 @@
     }
     h+=`</thead><tbody>`;
     (res.data||[]).forEach(i => {
-      h+=`<tr>`; res.headers.forEach(c => {
+      h+=`<tr>`; (res.headers || []).forEach(c => {
         let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():"";
         let fg = "";
         if (cln === "COUNTRYC" || cln === "COUNTRY_C") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
@@ -1048,30 +1073,15 @@
   }
 
   function loadOrderStatusList(force) {
-    if (isOrderStatusLoaded && !force) return;
-    const msgId = 'orderStatusMsgArea'; let timer = null;
-    
-    const cachedDataStr = sessionStorage.getItem('wms_cache_orderStatus');
-    if (cachedDataStr && !force) {
-      try {
-        const cacheObj = JSON.parse(cachedDataStr);
-        if (Date.now() - cacheObj.timestamp < 300000) { renderOrderStatusData(cacheObj.data); isOrderStatusLoaded = true; 
-          window.google.script.run.withSuccessHandler((res) => {
-            fetchAndUpdateSyncTime('ODStatusProcess', 'lastOrderStatusRefreshedTime');
-            sessionStorage.setItem('wms_cache_orderStatus', JSON.stringify({ timestamp: Date.now(), data: res }));
-            renderOrderStatusData(res);
-          }).getOrderStatusData();
-          return;
-        } else { timer = startLoadingMsg(msgId, 'ORDER STAT'); }
-      } catch (e) { timer = startLoadingMsg(msgId, 'ORDER STAT'); }
-    } else { timer = startLoadingMsg(msgId, 'ORDER STAT'); }
+    const msgId = 'orderStatusMsgArea'; 
+    let timer = startLoadingMsg(msgId, 'ORDER STAT');
     
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); isOrderStatusLoaded = true; fetchAndUpdateSyncTime('ODStatusProcess', 'lastOrderStatusRefreshedTime');
-      const cacheObj = { timestamp: Date.now(), data: res }; sessionStorage.setItem('wms_cache_orderStatus', JSON.stringify(cacheObj)); renderOrderStatusData(res);
+      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('ODStatusProcess', 'lastOrderStatusRefreshedTime');
+      renderOrderStatusData(res);
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
-       if(!cachedDataStr) document.getElementById(msgId).textContent="ERROR:"+e.message; 
+       document.getElementById(msgId).textContent="ERROR:"+e.message; 
     }).getOrderStatusData();
   }
 
@@ -1081,16 +1091,16 @@
     
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
     
-    let h = `<table class="compact-table"><thead><tr>`; res.headers.forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
     
-    let planKey = res.headers.find(h => h.toUpperCase().trim() === "PLAN");
-    let soKey = res.headers.find(h => h.toUpperCase().trim() === "S/O");
-    const pcKey = res.headers.find(h => h.toUpperCase().trim() === "P/C");
-    const genderKey = res.headers.find(h => h.toUpperCase().trim() === "GENDER");
+    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN");
+    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O");
+    const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C");
+    const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER");
     const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
 
     (res.data||[]).forEach(i => {
-      let isT = res.headers.some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL"));
+      let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL"));
       let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N");
       let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; 
       let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
@@ -1104,7 +1114,7 @@
       else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
       if(!isT && i["S/O"] && i["S/O"] !== "-") { 
-        tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"])||0; 
+        tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); 
         let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal;
         if (pcValue.includes("GOH")) pGoh += pcsVal;
         else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal;
@@ -1114,7 +1124,7 @@
       }
       
       h+=`<tr class="${isT ? 'gao-total-row' : ('gao-data-row ' + categoryClass)}">`;
-      res.headers.forEach((c, colIndex) => {
+      (res.headers || []).forEach((c, colIndex) => {
         let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; const vOriginal = String(v).trim();
         if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday";
         else if (cln === "SCND") cls = "text-green"; 
@@ -1148,31 +1158,15 @@
   }
 
   function loadGaoDataList(force) {
-    if (isGaoLoaded && !force) return;
-    const msgId = 'gaoMsgArea'; let timer = null;
-    const cachedDataStr = sessionStorage.getItem('wms_cache_gao');
-    
-    if (cachedDataStr && !force) {
-      try {
-        const cacheObj = JSON.parse(cachedDataStr);
-        if (Date.now() - cacheObj.timestamp < 300000) { 
-          renderGaoData(cacheObj.data); isGaoLoaded = true; 
-          window.google.script.run.withSuccessHandler((res) => {
-             fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime');
-             sessionStorage.setItem('wms_cache_gao', JSON.stringify({ timestamp: Date.now(), data: res }));
-             renderGaoData(res);
-          }).getGaoData();
-          return; 
-        } else { timer = startLoadingMsg(msgId, 'DI STAT'); }
-      } catch (e) { timer = startLoadingMsg(msgId, 'DI STAT'); }
-    } else { timer = startLoadingMsg(msgId, 'DI STAT'); }
+    const msgId = 'gaoMsgArea'; 
+    let timer = startLoadingMsg(msgId, 'DI STAT');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); isGaoLoaded = true; fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime');
-      const cacheObj = { timestamp: Date.now(), data: res }; sessionStorage.setItem('wms_cache_gao', JSON.stringify(cacheObj)); renderGaoData(res);
+      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime');
+      renderGaoData(res);
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
-       if(!cachedDataStr) document.getElementById(msgId).textContent="ERROR:"+e.message;
+       document.getElementById(msgId).textContent="ERROR:"+e.message;
     }).getGaoData();
   }
 
@@ -1213,38 +1207,23 @@
   }
 
   function loadRecDataList(force) {
-    if (isRecLoaded && !force) return;
-    const msgId = 'recMsgArea'; let timer = null;
-    const cachedDataStr = sessionStorage.getItem('wms_cache_rec');
-    if (cachedDataStr && !force) {
-      try {
-        const cacheObj = JSON.parse(cachedDataStr);
-        if (Date.now() - cacheObj.timestamp < 300000) { 
-          renderRecData(cacheObj.data); isRecLoaded = true;
-          window.google.script.run.withSuccessHandler((res) => {
-             fetchAndUpdateSyncTime('ReceivedSyncProcess', 'lastRecRefreshedTime');
-             sessionStorage.setItem('wms_cache_rec', JSON.stringify({ timestamp: Date.now(), data: res }));
-             renderRecData(res);
-          }).getRecData();
-          return;
-        } else { timer = startLoadingMsg(msgId, 'REC STAT'); }
-      } catch (e) { timer = startLoadingMsg(msgId, 'REC STAT'); }
-    } else { timer = startLoadingMsg(msgId, 'REC STAT'); }
+    const msgId = 'recMsgArea'; 
+    let timer = startLoadingMsg(msgId, 'REC STAT');
     
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); isRecLoaded = true; fetchAndUpdateSyncTime('ReceivedSyncProcess', 'lastRecRefreshedTime');
-      sessionStorage.setItem('wms_cache_rec', JSON.stringify({ timestamp: Date.now(), data: res })); renderRecData(res);
+      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('ReceivedSyncProcess', 'lastRecRefreshedTime');
+      renderRecData(res);
     }).withFailureHandler(e => { stopLoadingMsg(msgId, timer); document.getElementById(msgId).textContent="ERROR:"+e.message; }).getRecData();
   }
 
   function renderRecData(res) {
     let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
     
-    let catKey = res.headers.find(h => h.toUpperCase().trim() === "CAT");
-    let soKey = res.headers.find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
+    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT");
+    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
     
     let h = `<table class="compact-table"><thead><tr>`; 
-    res.headers.forEach(c => {
+    (res.headers || []).forEach(c => {
       if (c && String(c).toUpperCase().includes("UPD/")) {
         h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`;
       } else {
@@ -1261,7 +1240,7 @@
       else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;";
 
       h+=`<tr>`; 
-      res.headers.forEach(c => {
+      (res.headers || []).forEach(c => {
         let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; let inlineStyle = "";
         if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); }
         else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
@@ -1274,15 +1253,14 @@
   }
 
   function loadDbDataList(force) {
-    if (isDbLoaded && !force) return;
     let timer = startLoadingMsg('dbMsgArea', 'DB STAT');
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('dbMsgArea', timer); isDbLoaded = true;
+      stopLoadingMsg('dbMsgArea', timer);
       let ts = "--:--"; if(res.data) { const t=res.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
       document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = res.rowCount||0;
-      let h = `<table class="compact-table"><thead><tr>`; res.headers.forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+      let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
       (res.data||[]).forEach(i => {
-        h+=`<tr>`; res.headers.forEach(c => {
+        h+=`<tr>`; (res.headers || []).forEach(c => {
           let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let cls="";
           if(cln==="SCND") cls="text-green"; else if(cln==="-SCN"){ cls="text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
           if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
@@ -1293,11 +1271,10 @@
   }
 
   function loadMapData(force) {
-    if (isMapLoaded && !force) return;
     let timer = startLoadingMsg('mapMsgArea', 'MAP LAYOUT');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('mapMsgArea', timer); isMapLoaded = true;
+      stopLoadingMsg('mapMsgArea', timer);
       fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastMapRefreshedTime');
 
       if (!res || !res.grid || res.grid.length === 0) {
@@ -1360,42 +1337,26 @@
   }
 
   function loadLoadplanData(force) {
-    if (isLpLoaded && !force) return;
-    const msgId = 'lpMsgArea'; let timer = null;
-    const cachedDataStr = sessionStorage.getItem('wms_cache_lp');
-    
-    if (cachedDataStr && !force) {
-      try {
-        const cacheObj = JSON.parse(cachedDataStr);
-        if (Date.now() - cacheObj.timestamp < 300000) { 
-          renderLoadplanData(cacheObj.data); isLpLoaded = true; 
-          window.google.script.run.withSuccessHandler((res) => {
-             fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastLpRefreshedTime');
-             sessionStorage.setItem('wms_cache_lp', JSON.stringify({ timestamp: Date.now(), data: res }));
-             renderLoadplanData(res);
-          }).getLoadplanData();
-          return; 
-        } else { timer = startLoadingMsg(msgId, 'LOADPLAN STAT'); }
-      } catch (e) { timer = startLoadingMsg(msgId, 'LOADPLAN STAT'); }
-    } else { timer = startLoadingMsg(msgId, 'LOADPLAN STAT'); }
+    const msgId = 'lpMsgArea'; 
+    let timer = startLoadingMsg(msgId, 'LOADPLAN STAT');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); isLpLoaded = true; fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastLpRefreshedTime');
-      const cacheObj = { timestamp: Date.now(), data: res }; sessionStorage.setItem('wms_cache_lp', JSON.stringify(cacheObj)); renderLoadplanData(res);
+      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastLpRefreshedTime');
+      renderLoadplanData(res);
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
-       if(!cachedDataStr) document.getElementById(msgId).textContent="ERROR:"+e.message;
+       document.getElementById(msgId).textContent="ERROR:"+e.message;
     }).getLoadplanData();
   }
 
   function renderLoadplanData(res) {
     document.getElementById('totLpRows').textContent = res.rowCount||0;
     let h = `<table class="compact-table"><thead><tr>`; 
-    res.headers.forEach(c => h+=`<th>${c}</th>`); 
+    (res.headers || []).forEach(c => h+=`<th>${c}</th>`); 
     h+=`</tr></thead><tbody>`;
     
     let prevDate = null; 
-    let dateColKey = res.headers.find(h => h.toUpperCase().trim() === "DATE") || res.headers[0]; 
+    let dateColKey = (res.headers || []).find(h => h.toUpperCase().trim() === "DATE") || (res.headers || [])[0]; 
 
     (res.data||[]).forEach((i, idx) => {
       let currentDate = i[dateColKey] !== undefined ? String(i[dateColKey]).trim() : "";
@@ -1408,7 +1369,7 @@
 
       h+=`<tr style="${trStyle}">`; 
       
-      res.headers.forEach(c => {
+      (res.headers || []).forEach(c => {
         let v = i[c] !== undefined ? i[c] : ""; 
         let cln = c ? c.toString().trim().toUpperCase() : "";
         let tdStyle = "";
@@ -1418,6 +1379,7 @@
           tdStyle = `max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.4; padding: 8px 6px; font-size: 14px;`;
           
           let formattedStr = String(v);
+          
           formattedStr = formattedStr.replace(/(40['’]?\s*HQ|20['’]?\s*GP|45['’]?\s*HQ|40['’]|20['’]|45HQ|20GP)/gi, '<span style="color:#a855f7; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/\b(GOH)\b/gi, '<span style="color:#d946ef; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/\b(FTW)\b/gi, '<span style="color:#ff8c00; font-weight:700;">$1</span>');
@@ -1450,39 +1412,23 @@
   }
 
   function loadUphData(force) {
-    if (isUphLoaded && !force) return;
-    const msgId = 'uphMsgArea'; let timer = null;
-    const cachedDataStr = sessionStorage.getItem('wms_cache_uph');
-    
-    if (cachedDataStr && !force) {
-      try {
-        const cacheObj = JSON.parse(cachedDataStr);
-        if (Date.now() - cacheObj.timestamp < 300000) { 
-          renderUphData(cacheObj.data); isUphLoaded = true; 
-          window.google.script.run.withSuccessHandler((res) => {
-             fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastUphRefreshedTime');
-             sessionStorage.setItem('wms_cache_uph', JSON.stringify({ timestamp: Date.now(), data: res }));
-             renderUphData(res);
-          }).getUphData();
-          return; 
-        } else { timer = startLoadingMsg(msgId, 'UPH STAT'); }
-      } catch (e) { timer = startLoadingMsg(msgId, 'UPH STAT'); }
-    } else { timer = startLoadingMsg(msgId, 'UPH STAT'); }
+    const msgId = 'uphMsgArea'; 
+    let timer = startLoadingMsg(msgId, 'UPH STAT');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); isUphLoaded = true; fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastUphRefreshedTime');
-      const cacheObj = { timestamp: Date.now(), data: res }; sessionStorage.setItem('wms_cache_uph', JSON.stringify(cacheObj)); renderUphData(res);
+      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastUphRefreshedTime');
+      renderUphData(res);
     }).withFailureHandler(e => {
        stopLoadingMsg(msgId, timer);
-       if(!cachedDataStr) document.getElementById(msgId).textContent="ERROR:"+e.message;
+       document.getElementById(msgId).textContent="ERROR:"+e.message;
     }).getUphData();
   }
 
   function renderUphData(res) {
     document.getElementById('totUphRows').textContent = res.rowCount||0;
-    let h = `<table class="compact-table"><thead><tr>`; res.headers.forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
     (res.data||[]).forEach(i => {
-      h+=`<tr>`; res.headers.forEach(c => {
+      h+=`<tr>`; (res.headers || []).forEach(c => {
         let v = i[c] !== undefined ? i[c] : ""; 
         if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td>${v}</td>`;
       }); h+=`</tr>`;
@@ -1529,11 +1475,6 @@
     const mKeys = Object.keys(auditState.systemItemsMap).filter(k => { const i = auditState.systemItemsMap[k]; return (i.barcode && (i.barcode===lk||i.barcode===rawScanned)) || (i.sku && (i.sku===lk||i.sku===rawScanned)); });
     if (mKeys.length > 0) { const uk = mKeys.find(k => (auditState.scannedCounts[k]||0) < auditState.systemItemsMap[k].sysQty); tk = uk ? uk : mKeys[0]; }
     if (!tk) tk = lk; processAuditItem(tk, rawScanned, lk);
-  }
-  
-  function incrementAuditItem(tk) {
-    const s = auditState.systemItemsMap[tk]; const raw = (s && s.barcode && s.barcode !== '-') ? s.barcode : tk;
-    processAuditItem(tk, raw, raw.length > 13 ? raw.substring(0, 13) : raw);
   }
   
   function processAuditItem(tk, raw, lk) {
