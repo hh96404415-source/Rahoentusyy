@@ -505,8 +505,8 @@
   };
 
   let cachedData = null;
+  let fetchPromise = null; // 🌟 併發鎖定防護，防止多次重複呼叫 fetch
 
-  // 🌟 修復重點 2：前端接手將特殊標籤解碼還原，讓 UI 無縫接軌
   function decodeFirebaseKeys(obj) {
     if (Array.isArray(obj)) {
       return obj.map(item => decodeFirebaseKeys(item));
@@ -538,17 +538,24 @@
 
   async function fetchCache() {
     if (cachedData) return cachedData;
-    try {
-      const response = await fetch(window.EDGE_CONFIG.FIREBASE_URL);
-      if (!response.ok) throw new Error("Firebase fetch failed");
-      const rawData = await response.json();
-      cachedData = decodeFirebaseKeys(rawData) || {};
-      console.log("✅ [Edge Cache] 資料已成功載入與解碼！");
-      return cachedData;
-    } catch (error) {
-      console.error("❌ 快取讀取失敗:", error);
-      return {};
-    }
+    if (fetchPromise) return fetchPromise; // 若已有請求正在進行中，則直接等待
+    
+    fetchPromise = (async () => {
+      try {
+        const response = await fetch(window.EDGE_CONFIG.FIREBASE_URL);
+        if (!response.ok) throw new Error("Firebase fetch failed");
+        const rawData = await response.json();
+        cachedData = decodeFirebaseKeys(rawData) || {};
+        console.log("[Edge Cache] Data successfully loaded and decoded!");
+        return cachedData;
+      } catch (error) {
+        console.error("Cache load error:", error);
+        return {};
+      } finally {
+        fetchPromise = null;
+      }
+    })();
+    return fetchPromise;
   }
 
   class GasMockRunner {
@@ -607,7 +614,6 @@
       }));
     }
 
-    // 🌟 修復重點 3：終極屬性空值防護，確保回傳的物件內必定有 headers 與 data 陣列
     getAlQtyList() { this._handleResult(fetchCache().then(d => { let r = d.alQty || {}; return { columns: r.columns||[], data: r.data||[], locsCount: r.locsCount||0, plCount: r.plCount||0, totalAlQty: r.totalAlQty||0 }; })); }
     getGaoData() { this._handleResult(fetchCache().then(d => { let r = d.gao || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
     getRecData() { this._handleResult(fetchCache().then(d => { let r = d.rec || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
@@ -633,15 +639,21 @@
     get: function(target, prop) {
       return function(...args) {
         const runner = new GasMockRunner();
-        if (typeof runner[prop] === 'function') setTimeout(() => runner[prop](...args), 0);
-        else if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') return runner[prop](...args);
-        else console.error(`[Edge Cache] 未實作的 GAS 方法: ${prop}`);
-        return runner;
+        // 🌟 修復重點：確保 withSuccessHandler 絕對同步綁定，解決無限等待問題
+        if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') {
+          return runner[prop](...args);
+        } else if (typeof runner[prop] === 'function') {
+          setTimeout(() => runner[prop](...args), 0);
+          return runner;
+        } else {
+          console.error(`[Edge Cache] Unimplemented GAS method: ${prop}`);
+          return runner;
+        }
       };
     }
   });
 
-  fetchCache().catch(e => console.log("快取預載失敗"));
+  fetchCache().catch(e => console.error("Cache preload failed", e));
 </script>
 
 <script>
