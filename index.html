@@ -189,9 +189,9 @@
       font-size: 14px !important; font-weight: 700;
     }
     
-    .lvl-3 { color: #d946ef !important; } 
-    .lvl-2 { color: #38bdf8 !important; } 
-    .lvl-1 { color: #86efac !important; } 
+    .lvl-3 { color: #d946ef !important; font-weight: 900; text-shadow: 0 0 8px rgba(217, 70, 239, 0.7); background: transparent !important; font-size: 14px !important; } 
+    .lvl-2 { color: #38bdf8 !important; font-weight: 900; text-shadow: 0 0 8px rgba(56, 189, 248, 0.7); background: transparent !important; font-size: 14px !important; } 
+    .lvl-1 { color: #86efac !important; font-weight: 900; text-shadow: 0 0 8px rgba(134, 239, 172, 0.7); background: transparent !important; font-size: 14px !important; } 
     .map-row-separator td, .map-row-separator th {
       border-bottom: 2px solid rgba(56, 189, 248, 0.4) !important;
     }
@@ -200,8 +200,8 @@
     .map-low { color: #86efac; background: rgba(52, 211, 153, 0.1); }
     .map-mid { color: #fde047; background: rgba(251, 191, 36, 0.15); }
     .map-high { color: #f87171; background: rgba(251, 113, 133, 0.25); font-weight: 700; }
-    /* 🌟 NEW: CSS for blocked cells marked with X */
-    .map-blocked { color: #fff; background: rgba(239, 68, 68, 0.6); font-weight: 900; }
+    /* 🌟 FIX: Updated CSS for map-blocked (X mark) to remove red background and use highlighted text */
+    .map-blocked { color: #f97316; font-weight: 900; font-size: 14px !important; text-shadow: 0 0 5px rgba(249, 115, 22, 0.5); }
 
     .gao-total-row td { background: rgba(251, 191, 36, 0.1) !important; color: var(--status-yellow) !important; font-weight: 700; border-top: 1px solid var(--status-yellow) !important; }
     .highlight-mon { color: #f472b6 !important; font-weight: 700 !important; }
@@ -447,9 +447,15 @@
   <div id="mapView" class="view-section" style="display: none;">
     <div id="mapMsgArea" class="message"></div>
     
-    <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
-      <div class="summary-item-compact" style="flex: 1;">MAP LAYOUT: <span id="totMapCells">MAP1-9 (A1:AO28)</span></div>
-      <div style="display:flex; align-items:center; gap:4px;">
+    <!-- 🌟 FIX: Updated Map Summary Box to include DB metrics -->
+    <div class="summary-box-compact" id="mapSummaryBox" style="display: none; justify-content: space-between;">
+      <div style="display: flex; gap: 8px; padding-left: 4px;">
+         <div class="summary-item-compact">EMPTY: <span id="mapSumEmpty" style="color: var(--status-green);">0</span></div>
+         <div class="summary-item-compact">OCCUPY: <span id="mapSumOccupy" style="color: var(--status-yellow);">0</span></div>
+         <div class="summary-item-compact">USED: <span id="mapSumUsed" style="color: var(--status-red);">0</span></div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:4px; margin-left: auto;">
         <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadMapData(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
@@ -574,13 +580,12 @@
         let authList = [];
         let authHeaders = [];
         
-        // 🌟 防護與相容新舊結構
         if (Array.isArray(data.auth)) {
-          authList = data.auth; // 若為舊版陣列，給予預設順序
+          authList = data.auth; 
           authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"];
         } else if (data.auth && data.auth.users) {
           authList = data.auth.users;
-          authHeaders = data.auth.headers || []; // 依據後端打包的試算表原始順序
+          authHeaders = data.auth.headers || []; 
         }
 
         const inputPin = String(pin).trim();
@@ -590,7 +595,6 @@
         const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph" };
         let permissions = [];
         
-        // 🌟 嚴格依照 authHeaders (A/C分頁表頭) 的順序依序檢查權限並生成導覽按鈕
         authHeaders.forEach(key => {
           if (user.isAllOpen || (user.permissions && user.permissions[key])) {
             let frontendKey = tabMapping[key];
@@ -600,7 +604,6 @@
           }
         });
         
-        // 兜底：加入任何未在 authHeaders 內但擁有權限的按鈕，確保無遺漏
         if (user.permissions) {
           for (let key in user.permissions) {
             let frontendKey = tabMapping[key];
@@ -903,10 +906,7 @@
   function triggerVibration(pattern) { if ("vibrate" in navigator) { try { navigator.vibrate(pattern); } catch(e) {} } }
   document.addEventListener('touchstart', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true, passive: true });
 
-  // ==============================================================================
-  // FUNCTION: formatHeaderDisplay
-  // PURPOSE: Convert safe CSS keys back to readable text for the UI 
-  // ==============================================================================
+  // 🌟 Helper for formatting headers (Decouples UI display from safe CSS keys)
   function formatHeaderDisplay(headerKey) {
     if (!headerKey) return "";
     let str = String(headerKey);
@@ -1035,7 +1035,6 @@
       document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0;
       document.getElementById('listSummaryBox').style.display = "flex";
       
-      // UI Decoupling
       let h = `<table class="compact-table"><thead><tr>`;
       (res.columns||[]).forEach(c => h+=`<th class="${c}">${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
       
@@ -1071,7 +1070,6 @@
     const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = "";
     const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
     
-    // UI Decoupling Helper: Find Country column based on decoded string
     const countryIdx = (res.headers || []).findIndex(h => {
         return formatHeaderDisplay(h).toUpperCase() === "COUNTRY";
     });
@@ -1087,7 +1085,6 @@
     });
     document.getElementById('orderStatusSummaryBox').style.display = "flex";
     
-    // UI Decoupling
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => h+=`<th class="${c}">${getCustomLabel(c)}</th>`); 
     h+=`</tr>`;
@@ -1136,22 +1133,18 @@
     
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
     
-    // UI Decoupling
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
     h+=`</tr></thead><tbody>`;
     
-    // Find keys based on DECODED names
     let planKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "PLAN");
     let soKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "S/O");
     const pcKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "P/C");
     const genderKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "GENDER");
     
-    // Target columns for coloring (also based on DECODED names)
     const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS", "S/O"];
 
     (res.data||[]).forEach(i => {
-      // Small adjustment: use original logic for detecting totals but ensure it's safe
       let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL"));
       
       let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N");
@@ -1167,7 +1160,6 @@
       else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
       if(!isT && soKey && i[soKey] && i[soKey] !== "-") { 
-        // Need to find safe keys for CBM, Ctns, PCS dynamically to be safe
         let cbmKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CBM");
         let ctnsKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CTNS");
         let pcsKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "PCS");
@@ -1284,7 +1276,6 @@
   function renderRecData(res) {
     let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
     
-    // UI Decoupling
     let catKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CAT");
     let soKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "S/O" || formatHeaderDisplay(h).toUpperCase().includes("UPD/"));
     
@@ -1331,7 +1322,6 @@
       let ts = "--:--"; if(r.data) { const t=r.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
       document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = r.rowCount||0;
       
-      // UI Decoupling
       let h = `<table class="compact-table"><thead><tr>`; 
       (r.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
       h+=`</tr></thead><tbody>`;
@@ -1361,7 +1351,29 @@
         document.getElementById('mapMsgArea').textContent = "NO MAP DATA FOUND"; return;
       }
       const grid = r.grid;
-      document.getElementById('mapSummaryBox').style.display = "flex"; document.getElementById('mapFilterGroup').style.display = "flex"; 
+      document.getElementById('mapSummaryBox').style.display = "flex"; 
+      document.getElementById('mapFilterGroup').style.display = "flex"; 
+
+      // 🌟 Fetch DB data asynchronously to update MAP summary metrics
+      fetchCache().then(cacheData => {
+         if (cacheData && cacheData.db && cacheData.db.data) {
+             const dbData = cacheData.db.data;
+             let emptyVal = 0, occupyVal = 0, usedVal = 0;
+
+             dbData.forEach(row => {
+                 const title = String(row["TITLE"] || "").trim().toLowerCase();
+                 const dataVal = row["DATA"] || 0;
+                 if (title === "empty/1014" || title === "empty__slash__1014") emptyVal = dataVal;
+                 else if (title === "occupy") occupyVal = dataVal;
+                 else if (title === "used") usedVal = dataVal;
+             });
+
+             document.getElementById('mapSumEmpty').textContent = emptyVal;
+             document.getElementById('mapSumOccupy').textContent = occupyVal;
+             document.getElementById('mapSumUsed').textContent = usedVal;
+         }
+      }).catch(err => console.error("Failed to load DB summary for MAP:", err));
+
 
       let h = `<table class="compact-table map-table">`;
       let currentRowGroup = "HEADER";
@@ -1392,10 +1404,11 @@
             // 🌟 2. Then process numbers
             else {
                 let num = parseFloat(valStr);
-                if (isNaN(num) || num === 0 || valStr === "") { 
-                    cellClass = "map-zero"; 
-                    valStr = "."; 
-                } 
+                if (isNaN(num) || num === 0 || valStr === "") { cellClass = "map-zero"; valStr = "."; } 
+                // 🌟 新增：針對倉位內數值 1, 2, 3 給予專屬高亮 (夾位操作提示)
+                else if (num === 1) { cellClass = "lvl-1"; } 
+                else if (num === 2) { cellClass = "lvl-2"; } 
+                else if (num === 3) { cellClass = "lvl-3"; } 
                 else if (num < 10) { cellClass = "map-low"; } 
                 else if (num < 30) { cellClass = "map-mid"; } 
                 else { cellClass = "map-high"; }
@@ -1446,7 +1459,6 @@
   function renderLoadplanData(res) {
     document.getElementById('totLpRows').textContent = res.rowCount||0;
     
-    // UI Decoupling
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
     h+=`</tr></thead><tbody>`;
@@ -1524,7 +1536,6 @@
   function renderUphData(res) {
     document.getElementById('totUphRows').textContent = res.rowCount||0;
     
-    // UI Decoupling
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
     h+=`</tr></thead><tbody>`;
@@ -1717,4 +1728,3 @@
 </script>
 </body>
 </html>
-```eof
