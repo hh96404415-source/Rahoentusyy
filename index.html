@@ -200,6 +200,8 @@
     .map-low { color: #86efac; background: rgba(52, 211, 153, 0.1); }
     .map-mid { color: #fde047; background: rgba(251, 191, 36, 0.15); }
     .map-high { color: #f87171; background: rgba(251, 113, 133, 0.25); font-weight: 700; }
+    /* 🌟 NEW: CSS for blocked cells marked with X */
+    .map-blocked { color: #fff; background: rgba(239, 68, 68, 0.6); font-weight: 900; }
 
     .gao-total-row td { background: rgba(251, 191, 36, 0.1) !important; color: var(--status-yellow) !important; font-weight: 700; border-top: 1px solid var(--status-yellow) !important; }
     .highlight-mon { color: #f472b6 !important; font-weight: 700 !important; }
@@ -519,7 +521,7 @@
           .replace(/__hsh__/g, "#")
           .replace(/__lsb__/g, "[")
           .replace(/__rsb__/g, "]")
-          .replace(/__sls__/g, "/"); // Note: Using __slash__ going forward based on GAS fix
+          .replace(/__sls__/g, "/"); 
         newObj[decodedKey] = decodeFirebaseKeys(obj[key]);
       }
       return newObj;
@@ -908,7 +910,7 @@
   function formatHeaderDisplay(headerKey) {
     if (!headerKey) return "";
     let str = String(headerKey);
-    if (str.startsWith("COL_")) return ""; // Hide unknown columns
+    if (str.startsWith("COL_")) return ""; 
     return str.replace(/__slash__/g, "/")
               .replace(/__dot__/g, ".")
               .replace(/__hsh__/g, "#")
@@ -1381,9 +1383,23 @@
           }
           if (rIdx === 0 || cIdx === 0 || cIdx === 1) { h += `<${tag} class="${cellClass}">${valStr}</${tag}>`; } 
           else {
-            let num = parseFloat(valStr);
-            if (isNaN(num) || num === 0 || valStr === "") { cellClass = "map-zero"; valStr = "."; } 
-            else if (num < 10) { cellClass = "map-low"; } else if (num < 30) { cellClass = "map-mid"; } else { cellClass = "map-high"; }
+            // 🌟 1. Check for specific string markers like "X" first
+            let valStrUpper = valStr.toUpperCase();
+            if (valStrUpper === "X") {
+                cellClass = "map-blocked"; 
+                valStr = "X";
+            } 
+            // 🌟 2. Then process numbers
+            else {
+                let num = parseFloat(valStr);
+                if (isNaN(num) || num === 0 || valStr === "") { 
+                    cellClass = "map-zero"; 
+                    valStr = "."; 
+                } 
+                else if (num < 10) { cellClass = "map-low"; } 
+                else if (num < 30) { cellClass = "map-mid"; } 
+                else { cellClass = "map-high"; }
+            }
             h += `<td class="${cellClass}">${valStr}</td>`;
           }
         });
@@ -1701,3 +1717,4 @@
 </script>
 </body>
 </html>
+```eof
