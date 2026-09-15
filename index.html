@@ -519,7 +519,7 @@
           .replace(/__hsh__/g, "#")
           .replace(/__lsb__/g, "[")
           .replace(/__rsb__/g, "]")
-          .replace(/__sls__/g, "/");
+          .replace(/__sls__/g, "/"); // Note: Using __slash__ going forward based on GAS fix
         newObj[decodedKey] = decodeFirebaseKeys(obj[key]);
       }
       return newObj;
@@ -901,8 +901,28 @@
   function triggerVibration(pattern) { if ("vibrate" in navigator) { try { navigator.vibrate(pattern); } catch(e) {} } }
   document.addEventListener('touchstart', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true, passive: true });
 
+  // ==============================================================================
+  // FUNCTION: formatHeaderDisplay
+  // PURPOSE: Convert safe CSS keys back to readable text for the UI 
+  // ==============================================================================
+  function formatHeaderDisplay(headerKey) {
+    if (!headerKey) return "";
+    let str = String(headerKey);
+    if (str.startsWith("COL_")) return ""; // Hide unknown columns
+    return str.replace(/__slash__/g, "/")
+              .replace(/__dot__/g, ".")
+              .replace(/__hsh__/g, "#")
+              .replace(/__dlr__/g, "$")
+              .replace(/__lsb__/g, "[")
+              .replace(/__rsb__/g, "]");
+  }
+
   const LABEL_MAP = { "TAG_ID": "Tag", "SKU_ID": "SKU", "SUPPLIER_SKU": "Barcode", "Size": "Size", "QTY": "QTY", "AL QTY": "ALQTY", "Pallet ID": "Pallet", "Receipt Dstamp": "Receipt", "User Def Type 1": "COO", "Style": "Style", "User Def Type 7 (SKU)": "Fabric", "COLOUR": "COLOUR", "Order Seasonality": "Season" };
-  function getCustomLabel(colName) { if (!colName || colName.startsWith("COL_")) return ""; return LABEL_MAP[colName] || colName; }
+  function getCustomLabel(colName) { 
+    if (!colName || colName.startsWith("COL_")) return ""; 
+    let displayCol = formatHeaderDisplay(colName);
+    return LABEL_MAP[displayCol] || displayCol; 
+  }
   function getValue(item, key) { const val = item[key]; return (val !== undefined && val !== null && val !== "" && val !== "-") ? val : "NA"; }
 
   function formatLocationStr(locStr) {
@@ -1012,13 +1032,18 @@
       stopLoadingMsg('listMsgArea', loadTimer); fetchAndUpdateSyncTime('INVSYNc.INVSYNc', 'lastRefreshedTime');
       document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0;
       document.getElementById('listSummaryBox').style.display = "flex";
+      
+      // UI Decoupling
       let h = `<table class="compact-table"><thead><tr>`;
-      (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
+      (res.columns||[]).forEach(c => h+=`<th class="${c}">${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
+      
       (res.data||[]).forEach(i => {
         h+=`<tr>`;
         res.columns.forEach(c => { 
           let val = i[c] !== undefined ? i[c] : ""; 
-          let displayHtml = val; let upperC = c ? c.toString().toUpperCase() : "";
+          let displayHtml = val; 
+          let displayC = formatHeaderDisplay(c);
+          let upperC = displayC.toUpperCase();
           if (upperC.includes("LOC")) displayHtml = formatLocationStr(val);
           else if (upperC.includes("PALLET") || upperC.includes("PL")) displayHtml = formatPalletStr(val);
           else if (upperC.includes("QTY") || upperC.includes("SUM")) {
@@ -1044,21 +1069,32 @@
     const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = "";
     const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
     
-    const countryIdx = (res.headers || []).findIndex(h => h && h.toString().trim().toUpperCase() === "COUNTRY");
+    // UI Decoupling Helper: Find Country column based on decoded string
+    const countryIdx = (res.headers || []).findIndex(h => {
+        return formatHeaderDisplay(h).toUpperCase() === "COUNTRY";
+    });
     
     (res.headers || []).forEach((h, idx) => {
-      if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,'');
+      if(!h)return; 
+      let displayH = formatHeaderDisplay(h);
+      const n = displayH.toUpperCase().replace(/\s+/g,'');
       if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){
         let v = res.totals[idx] || (res.data||[]).reduce((a,r)=>a+(parseFloat(r[h])||0),0);
-        mc.innerHTML += `<div class="summary-item-compact">${h.trim()}:<span>${v}</span></div>`;
+        mc.innerHTML += `<div class="summary-item-compact">${displayH}:<span>${v}</span></div>`;
       }
     });
     document.getElementById('orderStatusSummaryBox').style.display = "flex";
     
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr>`;
+    // UI Decoupling
+    let h = `<table class="compact-table"><thead><tr>`; 
+    (res.headers || []).forEach(c => h+=`<th class="${c}">${getCustomLabel(c)}</th>`); 
+    h+=`</tr>`;
+    
     if(res.totals && res.totals.length>0){
       h+=`<tr class="gao-total-row">`; (res.headers || []).forEach((c,i)=>{
-        let v=res.totals[i]||""; const cln=c?c.toString().trim().toUpperCase():"";
+        let v=res.totals[i]||""; 
+        const displayC = formatHeaderDisplay(c);
+        const cln = displayC.toUpperCase();
         let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v;
         if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
       }); h+=`</tr>`;
@@ -1066,9 +1102,11 @@
     h+=`</thead><tbody>`;
     (res.data||[]).forEach(i => {
       h+=`<tr>`; (res.headers || []).forEach(c => {
-        let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():"";
+        let v=i[c]!==undefined?i[c]:""; 
+        const displayC = formatHeaderDisplay(c);
+        const cln = displayC.toUpperCase();
         let fg = "";
-        if (cln === "COUNTRYC" || cln === "COUNTRY_C") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
+        if (cln === "COUNTRY") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
         let cls = ""; const vs = String(v).trim().toUpperCase();
         if(vs==="MON"||vs.endsWith("MON")||vs.endsWith("/MON")) cls="highlight-mon";
         if(cln==="SCND") cls+=" text-green"; else if(cln==="-SCN"){ cls+=" text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
@@ -1096,16 +1134,24 @@
     
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
     
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+    // UI Decoupling
+    let h = `<table class="compact-table"><thead><tr>`; 
+    (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
+    h+=`</tr></thead><tbody>`;
     
-    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN");
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O");
-    const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C");
-    const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER");
-    const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
+    // Find keys based on DECODED names
+    let planKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "PLAN");
+    let soKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "S/O");
+    const pcKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "P/C");
+    const genderKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "GENDER");
+    
+    // Target columns for coloring (also based on DECODED names)
+    const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS", "S/O"];
 
     (res.data||[]).forEach(i => {
+      // Small adjustment: use original logic for detecting totals but ensure it's safe
       let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL"));
+      
       let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N");
       let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; 
       let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
@@ -1119,8 +1165,16 @@
       else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
       if(!isT && soKey && i[soKey] && i[soKey] !== "-") { 
-        tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); 
-        let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal;
+        // Need to find safe keys for CBM, Ctns, PCS dynamically to be safe
+        let cbmKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CBM");
+        let ctnsKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CTNS");
+        let pcsKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "PCS");
+        
+        tCbm += parseFloat(i[cbmKey])||0; 
+        tCtns += parseFloat(i[ctnsKey]||0); 
+        let pcsVal = parseFloat(i[pcsKey])||0; 
+        
+        tPcs += pcsVal;
         if (pcValue.includes("GOH")) pGoh += pcsVal;
         else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal;
         else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal;
@@ -1130,7 +1184,11 @@
       
       h+=`<tr class="${isT ? 'gao-total-row' : ('gao-data-row ' + categoryClass)}">`;
       (res.headers || []).forEach((c, colIndex) => {
-        let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; const vOriginal = String(v).trim();
+        let v = i[c] !== undefined ? i[c] : ""; 
+        let displayC = formatHeaderDisplay(c);
+        const cln = displayC.toUpperCase(); 
+        let cls = ""; const vOriginal = String(v).trim();
+        
         if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday";
         else if (cln === "SCND") cls = "text-green"; 
         else if (cln === "-SCN") { cls = "text-red"; if(v && v !== "0" && v !== "-" && !String(v).startsWith("-")) v = "-" + v; }
@@ -1224,15 +1282,17 @@
   function renderRecData(res) {
     let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
     
-    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT");
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
+    // UI Decoupling
+    let catKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "CAT");
+    let soKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "S/O" || formatHeaderDisplay(h).toUpperCase().includes("UPD/"));
     
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => {
-      if (c && String(c).toUpperCase().includes("UPD/")) {
-        h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`;
+      let displayC = formatHeaderDisplay(c);
+      if (displayC.toUpperCase().includes("UPD/")) {
+        h += `<th class="${c}" style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${displayC}</th>`;
       } else {
-        h += `<th>${c}</th>`;
+        h += `<th class="${c}">${displayC}</th>`;
       }
     }); 
     h+=`</tr></thead><tbody>`;
@@ -1246,7 +1306,11 @@
 
       h+=`<tr>`; 
       (res.headers || []).forEach(c => {
-        let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; let inlineStyle = "";
+        let v = i[c] !== undefined ? i[c] : ""; 
+        let displayC = formatHeaderDisplay(c);
+        const cln = displayC.toUpperCase(); 
+        let cls = ""; let inlineStyle = "";
+        
         if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); }
         else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
         if (c === soKey && specialStyle !== "") inlineStyle = specialStyle;
@@ -1264,10 +1328,17 @@
       let r = res || { headers: [], data: [], rowCount: 0 };
       let ts = "--:--"; if(r.data) { const t=r.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
       document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = r.rowCount||0;
-      let h = `<table class="compact-table"><thead><tr>`; (r.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+      
+      // UI Decoupling
+      let h = `<table class="compact-table"><thead><tr>`; 
+      (r.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
+      h+=`</tr></thead><tbody>`;
+      
       (r.data||[]).forEach(i => {
         h+=`<tr>`; (r.headers || []).forEach(c => {
-          let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let cls="";
+          let v=i[c]!==undefined?i[c]:""; 
+          let displayC = formatHeaderDisplay(c);
+          const cln=displayC.toUpperCase(); let cls="";
           if(cln==="SCND") cls="text-green"; else if(cln==="-SCN"){ cls="text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
           if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
         }); h+=`</tr>`;
@@ -1358,12 +1429,14 @@
 
   function renderLoadplanData(res) {
     document.getElementById('totLpRows').textContent = res.rowCount||0;
+    
+    // UI Decoupling
     let h = `<table class="compact-table"><thead><tr>`; 
-    (res.headers || []).forEach(c => h+=`<th>${c}</th>`); 
+    (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
     h+=`</tr></thead><tbody>`;
     
     let prevDate = null; 
-    let dateColKey = (res.headers || []).find(h => h.toUpperCase().trim() === "DATE") || (res.headers || [])[0]; 
+    let dateColKey = (res.headers || []).find(h => formatHeaderDisplay(h).toUpperCase() === "DATE") || (res.headers || [])[0]; 
 
     (res.data||[]).forEach((i, idx) => {
       let currentDate = i[dateColKey] !== undefined ? String(i[dateColKey]).trim() : "";
@@ -1378,7 +1451,8 @@
       
       (res.headers || []).forEach(c => {
         let v = i[c] !== undefined ? i[c] : ""; 
-        let cln = c ? c.toString().trim().toUpperCase() : "";
+        let displayC = formatHeaderDisplay(c);
+        let cln = displayC.toUpperCase();
         let tdStyle = "";
         let displayValue = v;
 
@@ -1433,7 +1507,12 @@
 
   function renderUphData(res) {
     document.getElementById('totUphRows').textContent = res.rowCount||0;
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
+    
+    // UI Decoupling
+    let h = `<table class="compact-table"><thead><tr>`; 
+    (res.headers || []).forEach(c => h+=`<th class="${c}">${formatHeaderDisplay(c)}</th>`); 
+    h+=`</tr></thead><tbody>`;
+    
     (res.data||[]).forEach(i => {
       h+=`<tr>`; (res.headers || []).forEach(c => {
         let v = i[c] !== undefined ? i[c] : ""; 
