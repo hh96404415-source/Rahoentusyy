@@ -1370,8 +1370,14 @@
 
   function renderLoadplanData(res) {
     document.getElementById('totLpRows').textContent = res.rowCount||0;
+    
+    // 🌟 1. 產生表頭時，隱藏 SO 欄位
     let h = `<table class="compact-table"><thead><tr>`; 
-    (res.headers || []).forEach(c => h+=`<th>${c}</th>`); 
+    (res.headers || []).forEach(c => {
+      let cln = c ? c.toString().trim().toUpperCase() : "";
+      if (cln === "SO" || cln === "S/O") return; // 略過 SO
+      h+=`<th>${c}</th>`;
+    }); 
     h+=`</tr></thead><tbody>`;
     
     let prevDate = null; 
@@ -1389,12 +1395,16 @@
       h+=`<tr style="${trStyle}">`; 
       
       (res.headers || []).forEach(c => {
-        let v = i[c] !== undefined ? i[c] : ""; 
         let cln = c ? c.toString().trim().toUpperCase() : "";
+        
+        // 🌟 2. 產生資料列時，同步隱藏 SO 欄位
+        if (cln === "SO" || cln === "S/O") return; 
+
+        let v = i[c] !== undefined ? i[c] : ""; 
         let tdStyle = "";
         let displayValue = v;
 
-        // 🌟 1. CBM / CBMO 自動四捨五入取整數 (維持原本邏輯)
+        // CBM / CBMO 自動四捨五入取整數
         if (cln === "CBM" || cln === "CBMO") {
           let num = parseFloat(v);
           if (!isNaN(num)) {
@@ -1402,9 +1412,8 @@
           }
         }
 
-        // 🌟 2. 針對不同的欄位套用專屬的 CSS 排版
+        // 針對 DETAILS 欄位套用專屬的 CSS 排版與高亮
         if (cln === "DETAILSIN" || cln === "DETAILSOUT" || cln.includes("DETAILS")) {
-          // 緊湊排版與高亮
           tdStyle += ` max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.1; padding: 2px 4px; font-size: 11px;`;
           let formattedStr = String(displayValue);
           formattedStr = formattedStr.replace(/(40['’]?\s*HQ|20['’]?\s*GP|45['’]?\s*HQ|40['’]|20['’]|45HQ|20GP)/gi, '<span style="color:#a855f7; font-weight:700;">$1</span>');
@@ -1417,17 +1426,13 @@
           formattedStr = formattedStr.replace(/\b(SS|FW)/gi, '<span style="color:#fb7185; font-weight:700;">$1</span>');
           displayValue = formattedStr;
         } 
-        else if (cln === "SO" || cln === "S/O") {
-          // 讓 SO 欄位能夠換行顯示 (限制最大寬度)
-          tdStyle += ` white-space: normal; word-break: break-word; max-width: 110px; line-height: 1.1;`;
-        }
 
-        // 🌟 3. 將 TIME, PCS, CTNS, CBM, CAT 放大加粗
+        // 將 TIME, PCS, CTNS, CTNO, CBM, CBMO, CAT 放大加粗
         if (["TIME", "PCS", "CTNS", "CTNO", "CBM", "CBMO", "CAT"].includes(cln)) {
           tdStyle += ` font-size: 14px; font-weight: 700;`;
         }
 
-        // 🌟 4. 日期欄位淡化與分組處理
+        // 日期欄位淡化與分組處理
         if (c === dateColKey) {
             if (isFirstRow || isNewDateGroup) {
                 displayValue = `<span style="color: var(--accent-cyan); font-weight: bold;">${v}</span>`;
