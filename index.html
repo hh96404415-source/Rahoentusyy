@@ -1394,8 +1394,9 @@
         let tdStyle = "";
         let displayValue = v;
 
-        if (cln === "IDETAILS" || cln === "ODETAILS") {
-          // Changed padding and line-height for a more compact LP table
+        // 🌟 更新判斷條件：改為尋找 DETAILSIN 與 DETAILSOUT (或包含 DETAILS 的欄位)
+        if (cln === "DETAILSIN" || cln === "DETAILSOUT" || cln.includes("DETAILS")) {
+          // 維持高緊湊度排版
           tdStyle = `max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.1; padding: 2px 4px; font-size: 11px;`;
           
           let formattedStr = String(v);
