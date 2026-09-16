@@ -316,7 +316,7 @@
       <div class="summary-item-compact">ALQTY: <span id="totListAlQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadAlList(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="listTableContainer"></div></div>
@@ -379,7 +379,28 @@
       <div id="orderStatusMetricsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; flex: 1;"></div>
       <div style="display:flex; align-items:center; gap:4px; padding-left: 6px; border-left: 1px solid var(--border-light);">
         <span id="lastOrderStatusRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadOrderStatusList(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
+  </div>
+
+  <div id="gaoView" class="view-section" style="display: none;">
+    <div id="gaoMsgArea" class="message"></div>
+    
+    <div class="summary-box-compact" id="gaoSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totGaoRows">0</span></div>
+      <div class="summary-item-compact">CBM:<span id="totGaoCbm" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact">CTNS:<span id="totGaoCtns" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact">PCS:<span id="totGaoPcs" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact" style="color:#d946ef;">GOH:<span id="totGaoPcsGOH" style="color:#d946ef;">0</span></div>
+      <div class="summary-item-compact" style="color:#ff8c00;">FTW:<span id="totGaoPcsFTW" style="color:#ff8c00;">0</span></div>
+      <div class="summary-item-compact" style="color:#ff003c;">ACC:<span id="totGaoPcsACC" style="color:#ff003c;">0</span></div>
+      <div class="summary-item-compact" style="color:#86efac;">BDW:<span id="totGaoPcsBDW" style="color:#86efac;">0</span></div>
+      <div class="summary-item-compact" style="color:var(--text-main);">OTH:<span id="totGaoPcsOTH" style="color:var(--text-main);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <span id="lastGaoRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
@@ -424,7 +445,32 @@
       <div class="summary-item-compact text-red">-SCN:<span id="totRecScn" class="text-red">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRecRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadRecDataList(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
+  </div>
+  
+  <div id="dbView" class="view-section" style="display: none;">
+    <div id="dbMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="dbSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totDbRows">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <span id="lastDbRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="dbTableContainer"></div></div>
+  </div>
+
+  <div id="mapView" class="view-section" style="display: none;">
+    <div id="mapMsgArea" class="message"></div>
+    
+    <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
+      <div class="summary-item-compact" style="flex: 1;">MAP LAYOUT: <span id="totMapCells">MAP1-9 (A1:AO28)</span></div>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
@@ -475,7 +521,7 @@
       <div class="summary-item-compact">ROWS:<span id="totLpRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastLpRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadLoadplanData(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="lpTableContainer"></div></div>
@@ -487,7 +533,7 @@
       <div class="summary-item-compact">ROWS:<span id="totUphRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastUphRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadUphData(true)"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="uphTableContainer"></div></div>
@@ -1383,7 +1429,7 @@
         let displayValue = v;
 
         if (cln === "IDETAILS" || cln === "ODETAILS") {
-          tdStyle = `max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.4; padding: 8px 6px; font-size: 14px;`;
+          tdStyle = `max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.2; padding: 2px 4px; font-size: 12px;`;
           
           let formattedStr = String(v);
           
