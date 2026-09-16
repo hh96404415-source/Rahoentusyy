@@ -197,9 +197,14 @@
     }
 
     .map-zero { color: rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.1); font-weight: normal; }
-    .map-low { color: #86efac; background: rgba(52, 211, 153, 0.1); }
-    .map-mid { color: #fde047; background: rgba(251, 191, 36, 0.15); }
-    .map-high { color: #f87171; background: rgba(251, 113, 133, 0.25); font-weight: 700; }
+    .map-normal { color: #f8fafc; }
+    .map-restock-target { 
+      background-color: rgba(56, 189, 248, 0.25) !important; 
+      color: #38bdf8 !important; 
+      font-weight: 900 !important; 
+      text-shadow: 0 0 5px rgba(56, 189, 248, 0.8); 
+      border: 1px solid rgba(56, 189, 248, 0.5) !important; 
+    }
 
     .gao-total-row td { background: rgba(251, 191, 36, 0.1) !important; color: var(--status-yellow) !important; font-weight: 700; border-top: 1px solid var(--status-yellow) !important; }
     .highlight-mon { color: #f472b6 !important; font-weight: 700 !important; }
@@ -233,6 +238,11 @@
     .pin-error { color: var(--status-red); font-size: 12px; margin-top: 12px; min-height: 18px; font-family: 'Roboto Mono'; }
 
     .message { font-size: 12px; color: var(--status-red); font-weight: bold; margin-bottom: 8px; text-align: center; }
+
+    /* 新增：MAP 棧板數切換功能樣式 */
+    .show-pallets .cell-qty { display: none !important; }
+    .show-pallets .cell-pallet { display: inline-block !important; font-weight: 900; color: #fde047; text-shadow: 0 0 5px rgba(253, 224, 71, 0.8); font-size: 14px; }
+    .cell-pallet { display: none; }
   </style>
 </head>
 <body>
@@ -318,7 +328,6 @@
       <div class="summary-item-compact">ALQTY: <span id="totListAlQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
@@ -384,14 +393,13 @@
       <div id="orderStatusMetricsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; flex: 1;"></div>
       <div style="display:flex; align-items:center; gap:4px; padding-left: 6px; border-left: 1px solid var(--border-light);">
         <span id="lastOrderStatusRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
   </div>
 
-  <!-- DI (Gao) - 確保只有這一個唯一區塊 -->
+  <!-- DI (Gao) -->
   <div id="gaoView" class="view-section" style="display: none;">
     <div id="gaoMsgArea" class="message"></div>
     
@@ -407,7 +415,6 @@
       <div class="summary-item-compact" style="color:var(--text-main);">OTH:<span id="totGaoPcsOTH" style="color:var(--text-main);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastGaoRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
@@ -433,36 +440,36 @@
       <div class="summary-item-compact text-red">-SCN:<span id="totRecScn" class="text-red">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRecRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
   </div>
   
-  <!-- DB (確保只有這一個唯一區塊) -->
+  <!-- DB -->
   <div id="dbView" class="view-section" style="display: none;">
     <div id="dbMsgArea" class="message"></div>
     <div class="summary-box-compact" id="dbSummaryBox" style="display: none;">
       <div class="summary-item-compact">ROWS:<span id="totDbRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastDbRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="dbTableContainer"></div></div>
   </div>
 
-  <!-- MAP (確保只有這一個唯一區塊) -->
+  <!-- MAP -->
   <div id="mapView" class="view-section" style="display: none;">
     <div id="mapMsgArea" class="message"></div>
     
     <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
-      <div class="summary-item-compact" style="flex: 1;">MAP LAYOUT: <span id="totMapCells">MAP1-9 (A1:AO28)</span></div>
-      <div style="display:flex; align-items:center; gap:4px;">
+      <div class="summary-item-compact">EMPTY:<span id="mapTotEmpty">0</span></div>
+      <div class="summary-item-compact">OCCUPY:<span id="mapTotOccupy" style="color:var(--status-yellow);">0</span></div>
+      <div class="summary-item-compact">USED:<span id="mapTotUsed" style="color:var(--status-green);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <button id="toggleMapPalletBtn" class="icon-btn" style="min-width: 24px; height:24px; font-size:12px; border-color:var(--border-light);" onclick="toggleMapPalletView()" title="切換顯示棧板數"><i class="ph ph-package"></i></button>
         <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
@@ -490,7 +497,6 @@
       <div class="summary-item-compact">ROWS:<span id="totLpRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastLpRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
@@ -504,7 +510,6 @@
       <div class="summary-item-compact">ROWS:<span id="totUphRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastUphRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <!-- 全域更新為強制重新載入 (F5) -->
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
@@ -577,47 +582,32 @@
     constructor() { this.successHandler = null; this.failureHandler = null; }
     withSuccessHandler(handler) { this.successHandler = handler; return this; }
     withFailureHandler(handler) { this.failureHandler = handler; return this; }
-    _handleResult(promise) {
-      promise.then(res => { if (this.successHandler) this.successHandler(res); })
-             .catch(err => { if (this.failureHandler) this.failureHandler(err); else console.error("GAS Mock Error:", err); });
-    }
+    _handleResult(promise) { promise.then(res => { if (this.successHandler) this.successHandler(res); }).catch(err => { if (this.failureHandler) this.failureHandler(err); else console.error("GAS Mock Error:", err); }); }
 
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
-        let authList = [];
-        let authHeaders = [];
-        
-        if (Array.isArray(data.auth)) {
-          authList = data.auth; 
-          authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"];
-        } else if (data.auth && data.auth.users) {
-          authList = data.auth.users;
-          authHeaders = data.auth.headers || []; 
-        }
+        let authList = []; let authHeaders = [];
+        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
+        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || []; }
 
-        const inputPin = String(pin).trim();
-        const user = authList.find(u => u.pin === inputPin);
+        const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
         
         const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph" };
         let permissions = [];
         
         authHeaders.forEach(key => {
-          if (user.isAllOpen || (user.permissions && user.permissions[key])) {
-            let frontendKey = tabMapping[key];
-            if (frontendKey && !permissions.includes(frontendKey)) {
-              permissions.push(frontendKey);
+            if (user.isAllOpen || (user.permissions && user.permissions[key])) {
+                let frontendKey = tabMapping[key];
+                if (frontendKey && !permissions.includes(frontendKey)) permissions.push(frontendKey);
             }
-          }
         });
         
         if (user.permissions) {
-          for (let key in user.permissions) {
-            let frontendKey = tabMapping[key];
-            if (frontendKey && (user.isAllOpen || user.permissions[key]) && !permissions.includes(frontendKey)) {
-              permissions.push(frontendKey);
+            for (let key in user.permissions) {
+              let frontendKey = tabMapping[key];
+              if (frontendKey && (user.isAllOpen || user.permissions[key]) && !permissions.includes(frontendKey)) { permissions.push(frontendKey); }
             }
-          }
         }
         
         if (permissions.length === 0) return { success: false, error: 'No permissions assigned.' };
@@ -704,14 +694,7 @@
     const container = document.getElementById('sysQrCodeContainer');
     overlay.style.display = 'flex';
     container.innerHTML = '';
-    new QRCode(container, {
-      text: "https://hh96404415-source.github.io/Rahoentusy/",
-      width: 180,
-      height: 180,
-      colorDark : "#000000",
-      colorLight : "#ffffff",
-      correctLevel : QRCode.CorrectLevel.M
-    });
+    new QRCode(container, { text: "https://hh96404415-source.github.io/Rahoentusy/", width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
   }
 
   function closeSystemQrCode(e) {
@@ -720,7 +703,6 @@
   }
 
   const loadingTimers = {};
-  
   function startLoadingMsg(elementId, customPrefix = "LOADING") {
     const el = document.getElementById(elementId);
     if (!el) return null;
@@ -791,16 +773,9 @@
   }
 
   const TAB_INFO = {
-    "search": { label: "查詢", icon: "ph-magnifying-glass" },
-    "list": { label: "補貨", icon: "ph-recycle" },
-    "audit": { label: "盤點", icon: "ph-clipboard-text" },
-    "orderStatus": { label: "訂單", icon: "ph-package" },
-    "gao": { label: "DI", icon: "ph-truck" },
-    "rec": { label: "REC", icon: "ph-target" },
-    "db": { label: "DB", icon: "ph-database" },
-    "map": { label: "MAP", icon: "ph-map-trifold" },
-    "lp": { label: "LP", icon: "ph-list-numbers" },
-    "uph": { label: "UPH", icon: "ph-trend-up" }
+    "search": { label: "查詢", icon: "ph-magnifying-glass" }, "list": { label: "補貨", icon: "ph-recycle" }, "audit": { label: "盤點", icon: "ph-clipboard-text" },
+    "orderStatus": { label: "訂單", icon: "ph-package" }, "gao": { label: "DI", icon: "ph-truck" }, "rec": { label: "REC", icon: "ph-target" },
+    "db": { label: "DB", icon: "ph-database" }, "map": { label: "MAP", icon: "ph-map-trifold" }, "lp": { label: "LP", icon: "ph-list-numbers" }, "uph": { label: "UPH", icon: "ph-trend-up" }
   };
 
   function applyPermissions(authData) {
@@ -810,17 +785,14 @@
 
     const perms = authData.permissions || [];
     const tabBar = document.getElementById('mainTabBar');
-    
     tabBar.innerHTML = '';
 
     perms.forEach(targetKey => {
       const info = TAB_INFO[targetKey];
       if (info) {
         const btn = document.createElement('button');
-        btn.className = 'tab-btn';
-        btn.setAttribute('data-target', targetKey);
-        btn.onclick = () => switchTab(targetKey);
-        btn.innerHTML = `<i class="ph ${info.icon}"></i> ${info.label}`;
+        btn.className = 'tab-btn'; btn.setAttribute('data-target', targetKey);
+        btn.onclick = () => switchTab(targetKey); btn.innerHTML = `<i class="ph ${info.icon}"></i> ${info.label}`;
         tabBar.appendChild(btn); 
       }
     });
@@ -948,15 +920,15 @@
     document.getElementById(tab + 'View').style.display = 'block';
 
     if (tab === 'search') searchInput.focus();
-    else if (tab === 'list') loadAlList(false);
+    else if (tab === 'list') loadAlList();
     else if (tab === 'audit') document.getElementById('auditLocInput').focus();
-    else if (tab === 'orderStatus') loadOrderStatusList(false);
-    else if (tab === 'gao') loadGaoDataList(false);
-    else if (tab === 'rec') loadRecDataList(false);
-    else if (tab === 'db') loadDbDataList(false);
-    else if (tab === 'map') loadMapData(false);
-    else if (tab === 'lp') loadLoadplanData(false); 
-    else if (tab === 'uph') loadUphData(false);     
+    else if (tab === 'orderStatus') loadOrderStatusList();
+    else if (tab === 'gao') loadGaoDataList();
+    else if (tab === 'rec') loadRecDataList();
+    else if (tab === 'db') loadDbDataList();
+    else if (tab === 'map') loadMapData();
+    else if (tab === 'lp') loadLoadplanData(); 
+    else if (tab === 'uph') loadUphData();     
   }
 
   function fetchData() {
@@ -970,15 +942,9 @@
     let loadTimer = startLoadingMsg('msgArea', 'SEARCHING');
 
     if (sVal.length === 13) {
-      window.google.script.run
-        .withSuccessHandler(r => { stopLoadingMsg('msgArea', loadTimer); handleResponse(r, 'sku'); })
-        .withFailureHandler(e => { stopLoadingMsg('msgArea', loadTimer); handleError(e); })
-        .searchSupplierSku(sVal);
+      window.google.script.run.withSuccessHandler(r => { stopLoadingMsg('msgArea', loadTimer); handleResponse(r, 'sku'); }).withFailureHandler(e => { stopLoadingMsg('msgArea', loadTimer); handleError(e); }).searchSupplierSku(sVal);
     } else {
-      window.google.script.run
-        .withSuccessHandler(r => { stopLoadingMsg('msgArea', loadTimer); handleResponse(r, 'location'); })
-        .withFailureHandler(e => { stopLoadingMsg('msgArea', loadTimer); handleError(e); })
-        .searchLocation(sVal);
+      window.google.script.run.withSuccessHandler(r => { stopLoadingMsg('msgArea', loadTimer); handleResponse(r, 'location'); }).withFailureHandler(e => { stopLoadingMsg('msgArea', loadTimer); handleError(e); }).searchLocation(sVal);
     }
   }
 
@@ -1002,417 +968,262 @@
       let h = `<div class="card-header">`;
       if(type==='sku') h += `<span class="card-primary">${getValue(item,"LOCATION_ID")}</span><span class="card-qty">TAG: ${getValue(item,"TAG_ID")}</span>`;
       else h += `<span class="card-primary">TAG: ${getValue(item,"TAG_ID")}</span><span class="card-qty">QTY: ${getValue(item,"QTY")}</span>`;
-      h += `</div><div class="card-footer">
-        <span>SKU: ${getValue(item,"SKU_ID")}</span>
-        <span>${getValue(item,"Style")}-${getValue(item,"User Def Type 7 (SKU)")}</span>
-        <span>Sz: ${getValue(item,"Size")}</span>
-        <span>PL: ${formatPalletStr(getValue(item,"Pallet ID"))}</span>
-      </div>`;
+      h += `</div><div class="card-footer"><span>SKU: ${getValue(item,"SKU_ID")}</span><span>${getValue(item,"Style")}-${getValue(item,"User Def Type 7 (SKU)")}</span><span>Sz: ${getValue(item,"Size")}</span><span>PL: ${formatPalletStr(getValue(item,"Pallet ID"))}</span></div>`;
       card.innerHTML = h; cont.appendChild(card);
     });
   }
   
-  function handleError(e) { 
-    const b = document.getElementById('searchBtn'); b.disabled = false; b.innerHTML = "搜尋"; 
-    const m = document.getElementById('msgArea'); m.textContent = "ERROR: " + e.message; m.style.color = "var(--status-red)";
-  }
+  function handleError(e) { const b = document.getElementById('searchBtn'); b.disabled = false; b.innerHTML = "搜尋"; const m = document.getElementById('msgArea'); m.textContent = "ERROR: " + e.message; m.style.color = "var(--status-red)"; }
 
-  function loadAlList(force) {
+  function loadAlList() {
     let loadTimer = startLoadingMsg('listMsgArea', 'LIST');
-    
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg('listMsgArea', loadTimer); fetchAndUpdateSyncTime('UpInventory', 'lastRefreshedTime');
-      document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0;
-      document.getElementById('listSummaryBox').style.display = "flex";
-      let h = `<table class="compact-table"><thead><tr>`;
-      (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
+      document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0; document.getElementById('listSummaryBox').style.display = "flex";
+      let h = `<table class="compact-table"><thead><tr>`; (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
       (res.data||[]).forEach(i => {
-        h+=`<tr>`;
-        res.columns.forEach(c => { 
-          let val = i[c] !== undefined ? i[c] : ""; 
-          let displayHtml = val; let upperC = c ? c.toString().toUpperCase() : "";
-          if (upperC.includes("LOC")) displayHtml = formatLocationStr(val);
-          else if (upperC.includes("PALLET") || upperC.includes("PL")) displayHtml = formatPalletStr(val);
-          else if (upperC.includes("QTY") || upperC.includes("SUM")) {
-             let num = parseFloat(val);
-             if (!isNaN(num)) {
-                 let numStr = String(num);
-                 if (numStr.length >= 3) displayHtml = `<span style="color:var(--status-red); font-weight:700; font-size:14px;">${val}</span>`;
-                 else if (numStr.length === 2) displayHtml = `<span style="color:var(--status-yellow); font-weight:700;">${val}</span>`;
-                 else displayHtml = `<span style="color:var(--text-main); font-weight:700;">${val}</span>`;
-             } else displayHtml = `<span style="color:var(--accent-cyan); font-weight:700;">${val}</span>`;
-          }
+        h+=`<tr>`; res.columns.forEach(c => { 
+          let val = i[c] !== undefined ? i[c] : ""; let displayHtml = val; let upperC = c ? c.toString().toUpperCase() : "";
+          if (upperC.includes("LOC")) displayHtml = formatLocationStr(val); else if (upperC.includes("PALLET") || upperC.includes("PL")) displayHtml = formatPalletStr(val);
+          else if (upperC.includes("QTY") || upperC.includes("SUM")) { let num = parseFloat(val); if (!isNaN(num)) { let numStr = String(num); if (numStr.length >= 3) displayHtml = `<span style="color:var(--status-red); font-weight:700; font-size:14px;">${val}</span>`; else if (numStr.length === 2) displayHtml = `<span style="color:var(--status-yellow); font-weight:700;">${val}</span>`; else displayHtml = `<span style="color:var(--text-main); font-weight:700;">${val}</span>`; } else displayHtml = `<span style="color:var(--accent-cyan); font-weight:700;">${val}</span>`; }
           h+=`<td>${displayHtml}</td>`; 
-        });
-        h+=`</tr>`;
+        }); h+=`</tr>`;
       }); h+=`</tbody></table>`; document.getElementById('listTableContainer').innerHTML = h;
-    }).withFailureHandler(e => {
-      stopLoadingMsg('listMsgArea', loadTimer);
-      document.getElementById('listMsgArea').textContent="ERROR:"+e.message; 
-    }).getAlQtyList();
+    }).withFailureHandler(e => { stopLoadingMsg('listMsgArea', loadTimer); document.getElementById('listMsgArea').textContent="ERROR:"+e.message; }).getAlQtyList();
   }
 
   function renderOrderStatusData(res) {
-    const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = "";
-    const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
-    
+    const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = ""; const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
     const countryIdx = (res.headers || []).findIndex(h => h && h.toString().trim().toUpperCase() === "COUNTRY");
-    
-    (res.headers || []).forEach((h, idx) => {
-      if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,'');
-      if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){
-        let v = res.totals[idx] || (res.data||[]).reduce((a,r)=>a+(parseFloat(r[h])||0),0);
-        mc.innerHTML += `<div class="summary-item-compact">${h.trim()}:<span>${v}</span></div>`;
-      }
-    });
+    (res.headers || []).forEach((h, idx) => { if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,''); if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){ let v = res.totals[idx] || (res.data||[]).reduce((a,r)=>a+(parseFloat(r[h])||0),0); mc.innerHTML += `<div class="summary-item-compact">${h.trim()}:<span>${v}</span></div>`; } });
     document.getElementById('orderStatusSummaryBox').style.display = "flex";
     
     let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr>`;
-    if(res.totals && res.totals.length>0){
-      h+=`<tr class="gao-total-row">`; (res.headers || []).forEach((c,i)=>{
-        let v=res.totals[i]||""; const cln=c?c.toString().trim().toUpperCase():"";
-        let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v;
-        if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
-      }); h+=`</tr>`;
-    }
+    if(res.totals && res.totals.length>0){ h+=`<tr class="gao-total-row">`; (res.headers || []).forEach((c,i)=>{ let v=res.totals[i]||""; const cln=c?c.toString().trim().toUpperCase():""; let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`; }); h+=`</tr>`; }
     h+=`</thead><tbody>`;
     (res.data||[]).forEach(i => {
       h+=`<tr>`; (res.headers || []).forEach(c => {
-        let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():"";
-        let fg = "";
-        if (cln === "COUNTRYC" || cln === "COUNTRY_C") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
-        let cls = ""; const vs = String(v).trim().toUpperCase();
-        if(vs==="MON"||vs.endsWith("MON")||vs.endsWith("/MON")) cls="highlight-mon";
-        if(cln==="SCND") cls+=" text-green"; else if(cln==="-SCN"){ cls+=" text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
+        let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let fg = ""; if (cln === "COUNTRYC" || cln === "COUNTRY_C") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
+        let cls = ""; const vs = String(v).trim().toUpperCase(); if(vs==="MON"||vs.endsWith("MON")||vs.endsWith("/MON")) cls="highlight-mon"; if(cln==="SCND") cls+=" text-green"; else if(cln==="-SCN"){ cls+=" text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
         if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${fg}${v}</td>`;
       }); h+=`</tr>`;
     }); h+=`</tbody></table>`; document.getElementById('orderStatusTableContainer').innerHTML = h;
   }
 
-  function loadOrderStatusList(force) {
-    const msgId = 'orderStatusMsgArea'; 
-    let timer = startLoadingMsg(msgId, 'ORDER STAT');
-    
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('GetUpODStatus', 'lastOrderStatusRefreshedTime');
-      renderOrderStatusData(res || { headers: [], totals: [], data: [] });
-    }).withFailureHandler(e => {
-       stopLoadingMsg(msgId, timer);
-       document.getElementById(msgId).textContent="ERROR:"+e.message; 
-    }).getOrderStatusData();
+  function loadOrderStatusList() {
+    let timer = startLoadingMsg('orderStatusMsgArea', 'ORDER STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('orderStatusMsgArea', timer); fetchAndUpdateSyncTime('GetUpODStatus', 'lastOrderStatusRefreshedTime'); renderOrderStatusData(res || { headers: [], totals: [], data: [] }); }).withFailureHandler(e => { stopLoadingMsg('orderStatusMsgArea', timer); document.getElementById('orderStatusMsgArea').textContent="ERROR:"+e.message; }).getOrderStatusData();
   }
 
   function renderGaoData(res) {
-    let tCbm=0, tCtns=0, tPcs=0; 
-    let pGoh=0, pFtw=0, pAcc=0, pBdw=0, pOth=0;
-    
+    let tCbm=0, tCtns=0, tPcs=0; let pGoh=0, pFtw=0, pAcc=0, pBdw=0, pOth=0;
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
-    
     let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
     
-    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN");
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O");
-    const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C");
-    const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER");
-    const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
+    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O"); const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C"); const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER"); const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
 
     (res.data||[]).forEach(i => {
-      let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL"));
-      let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N");
-      let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; 
-      let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
-      
-      let specialStyle = "";
-      let categoryClass = "cat-oth"; 
-      
-      if (pcValue.includes("GOH")) { specialStyle = "color:#d946ef; font-weight:700;"; categoryClass = "cat-goh"; } 
-      else if (genderValue.includes("FOOTWEAR")) { specialStyle = "color:#ff8c00; font-weight:700;"; categoryClass = "cat-ftw"; } 
-      else if (genderValue.includes("ACCESSORY")) { specialStyle = "color:#ff003c; font-weight:700;"; categoryClass = "cat-acc"; } 
-      else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
+      let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL")); let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N"); let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
+      let specialStyle = ""; let categoryClass = "cat-oth"; 
+      if (pcValue.includes("GOH")) { specialStyle = "color:#d946ef; font-weight:700;"; categoryClass = "cat-goh"; } else if (genderValue.includes("FOOTWEAR")) { specialStyle = "color:#ff8c00; font-weight:700;"; categoryClass = "cat-ftw"; } else if (genderValue.includes("ACCESSORY")) { specialStyle = "color:#ff003c; font-weight:700;"; categoryClass = "cat-acc"; } else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
-      if(!isT && soKey && i[soKey] && i[soKey] !== "-") { 
-        tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); 
-        let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal;
-        if (pcValue.includes("GOH")) pGoh += pcsVal;
-        else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal;
-        else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal;
-        else if (genderValue.includes("BDW")) pBdw += pcsVal;
-        else pOth += pcsVal;
-      }
+      if(!isT && soKey && i[soKey] && i[soKey] !== "-") { tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal; if (pcValue.includes("GOH")) pGoh += pcsVal; else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal; else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal; else if (genderValue.includes("BDW")) pBdw += pcsVal; else pOth += pcsVal; }
       
       h+=`<tr class="${isT ? 'gao-total-row' : ('gao-data-row ' + categoryClass)}">`;
-      (res.headers || []).forEach((c, colIndex) => {
-        let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; const vOriginal = String(v).trim();
-        if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday";
-        else if (cln === "SCND") cls = "text-green"; 
-        else if (cln === "-SCN") { cls = "text-red"; if(v && v !== "0" && v !== "-" && !String(v).startsWith("-")) v = "-" + v; }
-        if (c === soKey && isPlanN && !isT) cls += " highlight-alert";
-        
-        let tdStyle = "";
-        if (vOriginal === "0" || vOriginal === "0.0") { cls = ""; tdStyle = "color: rgba(255, 255, 255, 0.1) !important;"; } 
-        else if (!isT && specialStyle !== "" && targetColorColumns.includes(cln)) tdStyle = specialStyle;
-
-        h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`;
-      }); h+=`</tr>`;
+      (res.headers || []).forEach((c, colIndex) => { let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; const vOriginal = String(v).trim(); if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday"; else if (cln === "SCND") cls = "text-green"; else if (cln === "-SCN") { cls = "text-red"; if(v && v !== "0" && v !== "-" && !String(v).startsWith("-")) v = "-" + v; } if (c === soKey && isPlanN && !isT) cls += " highlight-alert"; let tdStyle = ""; if (vOriginal === "0" || vOriginal === "0.0") { cls = ""; tdStyle = "color: rgba(255, 255, 255, 0.1) !important;"; } else if (!isT && specialStyle !== "" && targetColorColumns.includes(cln)) tdStyle = specialStyle; h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`; }); h+=`</tr>`;
     }); h+=`</tbody></table>`;
     
     if(document.getElementById('totGaoCbm')) document.getElementById('totGaoCbm').textContent = Number.isInteger(tCbm)?tCbm:tCbm.toFixed(1); 
-    if(document.getElementById('totGaoCtns')) document.getElementById('totGaoCtns').textContent=tCtns; 
-    if(document.getElementById('totGaoPcs')) document.getElementById('totGaoPcs').textContent=tPcs;
-    if(document.getElementById('totGaoPcsGOH')) document.getElementById('totGaoPcsGOH').textContent=pGoh;
-    if(document.getElementById('totGaoPcsFTW')) document.getElementById('totGaoPcsFTW').textContent=pFtw;
-    if(document.getElementById('totGaoPcsACC')) document.getElementById('totGaoPcsACC').textContent=pAcc;
-    if(document.getElementById('totGaoPcsBDW')) document.getElementById('totGaoPcsBDW').textContent=pBdw;
-    if(document.getElementById('totGaoPcsOTH')) document.getElementById('totGaoPcsOTH').textContent=pOth;
+    if(document.getElementById('totGaoCtns')) document.getElementById('totGaoCtns').textContent=tCtns; if(document.getElementById('totGaoPcs')) document.getElementById('totGaoPcs').textContent=tPcs; if(document.getElementById('totGaoPcsGOH')) document.getElementById('totGaoPcsGOH').textContent=pGoh; if(document.getElementById('totGaoPcsFTW')) document.getElementById('totGaoPcsFTW').textContent=pFtw; if(document.getElementById('totGaoPcsACC')) document.getElementById('totGaoPcsACC').textContent=pAcc; if(document.getElementById('totGaoPcsBDW')) document.getElementById('totGaoPcsBDW').textContent=pBdw; if(document.getElementById('totGaoPcsOTH')) document.getElementById('totGaoPcsOTH').textContent=pOth;
     
-    if(document.getElementById('gaoSummaryBox')) document.getElementById('gaoSummaryBox').style.display = "flex"; 
-    if(document.getElementById('gaoFilterGroup')) document.getElementById('gaoFilterGroup').style.display = "flex";
-    
-    if(document.getElementById('gaoTableContainer')) {
-      document.getElementById('gaoTableContainer').innerHTML = h;
-      applyGaoFilterVisibility();
-    }
+    if(document.getElementById('gaoSummaryBox')) document.getElementById('gaoSummaryBox').style.display = "flex"; if(document.getElementById('gaoFilterGroup')) document.getElementById('gaoFilterGroup').style.display = "flex";
+    if(document.getElementById('gaoTableContainer')) { document.getElementById('gaoTableContainer').innerHTML = h; applyGaoFilterVisibility(); }
   }
 
-  function loadGaoDataList(force) {
-    const msgId = 'gaoMsgArea'; 
-    let timer = startLoadingMsg(msgId, 'DI STAT');
-
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime');
-      renderGaoData(res || { headers: [], data: [], rowCount: 0 });
-    }).withFailureHandler(e => {
-       stopLoadingMsg(msgId, timer);
-       document.getElementById(msgId).textContent="ERROR:"+e.message;
-    }).getGaoData();
+  function loadGaoDataList() {
+    let timer = startLoadingMsg('gaoMsgArea', 'DI STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('gaoMsgArea', timer); fetchAndUpdateSyncTime('DIsyncGoogleSheet', 'lastGaoRefreshedTime'); renderGaoData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('gaoMsgArea', timer); document.getElementById('gaoMsgArea').textContent="ERROR:"+e.message; }).getGaoData();
   }
 
   const activeGaoFilters = new Set();
   function filterGao(category) {
     const allBtn = document.querySelector('#gaoFilterGroup .filter-btn-compact[data-filter="ALL"]');
-    if (category === 'ALL') {
-      activeGaoFilters.clear();
-      document.querySelectorAll('#gaoFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active'));
-      allBtn.classList.add('active');
-    } else {
-      const targetBtn = document.querySelector(`#gaoFilterGroup .filter-btn-compact[data-filter="${category}"]`);
-      if (activeGaoFilters.has(category)) { activeGaoFilters.delete(category); targetBtn.classList.remove('active'); } 
-      else { activeGaoFilters.add(category); targetBtn.classList.add('active'); }
-      
-      if (activeGaoFilters.size === 0) { allBtn.classList.add('active'); } else { allBtn.classList.remove('active'); }
-    }
+    if (category === 'ALL') { activeGaoFilters.clear(); document.querySelectorAll('#gaoFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active')); allBtn.classList.add('active'); } else { const targetBtn = document.querySelector(`#gaoFilterGroup .filter-btn-compact[data-filter="${category}"]`); if (activeGaoFilters.has(category)) { activeGaoFilters.delete(category); targetBtn.classList.remove('active'); } else { activeGaoFilters.add(category); targetBtn.classList.add('active'); } if (activeGaoFilters.size === 0) { allBtn.classList.add('active'); } else { allBtn.classList.remove('active'); } }
     applyGaoFilterVisibility();
   }
 
   function applyGaoFilterVisibility() {
-    const rows = document.querySelectorAll('.gao-data-row');
-    const totalRows = document.querySelectorAll('.gao-total-row');
-    if (activeGaoFilters.size === 0) {
-      rows.forEach(r => r.style.display = ''); totalRows.forEach(r => r.style.display = ''); 
-    } else {
-      rows.forEach(r => {
-        let isVisible = false;
-        if (activeGaoFilters.has('GOH') && r.classList.contains('cat-goh')) isVisible = true;
-        if (activeGaoFilters.has('FTW') && r.classList.contains('cat-ftw')) isVisible = true;
-        if (activeGaoFilters.has('ACC') && r.classList.contains('cat-acc')) isVisible = true;
-        if (activeGaoFilters.has('BDW') && r.classList.contains('cat-bdw')) isVisible = true;
-        if (activeGaoFilters.has('OTH') && r.classList.contains('cat-oth')) isVisible = true;
-        r.style.display = isVisible ? '' : 'none';
-      });
-      totalRows.forEach(r => r.style.display = 'none'); 
-    }
+    const rows = document.querySelectorAll('.gao-data-row'); const totalRows = document.querySelectorAll('.gao-total-row');
+    if (activeGaoFilters.size === 0) { rows.forEach(r => r.style.display = ''); totalRows.forEach(r => r.style.display = ''); } else { rows.forEach(r => { let isVisible = false; if (activeGaoFilters.has('GOH') && r.classList.contains('cat-goh')) isVisible = true; if (activeGaoFilters.has('FTW') && r.classList.contains('cat-ftw')) isVisible = true; if (activeGaoFilters.has('ACC') && r.classList.contains('cat-acc')) isVisible = true; if (activeGaoFilters.has('BDW') && r.classList.contains('cat-bdw')) isVisible = true; if (activeGaoFilters.has('OTH') && r.classList.contains('cat-oth')) isVisible = true; r.style.display = isVisible ? '' : 'none'; }); totalRows.forEach(r => r.style.display = 'none'); }
   }
 
-  function loadRecDataList(force) {
-    const msgId = 'recMsgArea'; 
-    let timer = startLoadingMsg(msgId, 'REC STAT');
-    
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('GetUpReceivedQty', 'lastRecRefreshedTime');
-      renderRecData(res || { headers: [], data: [], rowCount: 0 });
-    }).withFailureHandler(e => { stopLoadingMsg(msgId, timer); document.getElementById(msgId).textContent="ERROR:"+e.message; }).getRecData();
+  function loadRecDataList() {
+    let timer = startLoadingMsg('recMsgArea', 'REC STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('recMsgArea', timer); fetchAndUpdateSyncTime('GetUpReceivedQty', 'lastRecRefreshedTime'); renderRecData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('recMsgArea', timer); document.getElementById('recMsgArea').textContent="ERROR:"+e.message; }).getRecData();
   }
 
   function renderRecData(res) {
     let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
-    
-    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT");
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
-    
-    let h = `<table class="compact-table"><thead><tr>`; 
-    (res.headers || []).forEach(c => {
-      if (c && String(c).toUpperCase().includes("UPD/")) {
-        h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`;
-      } else {
-        h += `<th>${c}</th>`;
-      }
-    }); 
-    h+=`</tr></thead><tbody>`;
-    (res.data||[]).forEach(i => {
-      let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : "";
-      let specialStyle = "";
-      if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;";
-      else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;";
-      else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;";
-      else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;";
-
-      h+=`<tr>`; 
-      (res.headers || []).forEach(c => {
-        let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; let inlineStyle = "";
-        if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); }
-        else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
-        if (c === soKey && specialStyle !== "") inlineStyle = specialStyle;
-        if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}" style="${inlineStyle}">${v}</td>`;
-      }); h+=`</tr>`;
-    }); h+=`</tbody></table>`;
-    document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2);
-    document.getElementById('recSummaryBox').style.display = "flex"; document.getElementById('recTableContainer').innerHTML = h;
+    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
+    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => { if (c && String(c).toUpperCase().includes("UPD/")) { h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`; } else { h += `<th>${c}</th>`; } }); h+=`</tr></thead><tbody>`;
+    (res.data||[]).forEach(i => { let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : ""; let specialStyle = ""; if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;"; else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;"; else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;"; else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;"; h+=`<tr>`; (res.headers || []).forEach(c => { let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; let inlineStyle = ""; if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); } else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; } if (c === soKey && specialStyle !== "") inlineStyle = specialStyle; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}" style="${inlineStyle}">${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`;
+    document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); document.getElementById('recSummaryBox').style.display = "flex"; document.getElementById('recTableContainer').innerHTML = h;
   }
 
-  function loadDbDataList(force) {
+  function loadDbDataList() {
     let timer = startLoadingMsg('dbMsgArea', 'DB STAT');
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('dbMsgArea', timer);
-      let r = res || { headers: [], data: [], rowCount: 0 };
-      let ts = "--:--"; if(r.data) { const t=r.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); }
-      document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = r.rowCount||0;
-      let h = `<table class="compact-table"><thead><tr>`; (r.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
-      (r.data||[]).forEach(i => {
-        h+=`<tr>`; (r.headers || []).forEach(c => {
-          let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let cls="";
-          if(cln==="SCND") cls="text-green"; else if(cln==="-SCN"){ cls="text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
-          if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`;
-        }); h+=`</tr>`;
-      }); h+=`</tbody></table>`;
-      document.getElementById('dbSummaryBox').style.display = "flex"; document.getElementById('dbTableContainer').innerHTML = h;
-    }).withFailureHandler(e => { stopLoadingMsg('dbMsgArea', timer); document.getElementById('dbMsgArea').textContent="ERROR:"+e.message; }).getDbData();
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('dbMsgArea', timer); let r = res || { headers: [], data: [], rowCount: 0 }; let ts = "--:--"; if(r.data) { const t=r.data.find(i=>String(i["TITLE"]||"").trim()==="TimerSYNC"); if(t) ts=String(t["DATA"]||"").trim(); } document.getElementById('lastDbRefreshedTime').textContent = ts; document.getElementById('totDbRows').textContent = r.rowCount||0; let h = `<table class="compact-table"><thead><tr>`; (r.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`; (r.data||[]).forEach(i => { h+=`<tr>`; (r.headers || []).forEach(c => { let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let cls=""; if(cln==="SCND") cls="text-green"; else if(cln==="-SCN"){ cls="text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; } if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`; document.getElementById('dbSummaryBox').style.display = "flex"; document.getElementById('dbTableContainer').innerHTML = h; }).withFailureHandler(e => { stopLoadingMsg('dbMsgArea', timer); document.getElementById('dbMsgArea').textContent="ERROR:"+e.message; }).getDbData();
   }
 
-  function loadMapData(force) {
+  let isMapPalletView = false;
+  function toggleMapPalletView() {
+    isMapPalletView = !isMapPalletView;
+    const container = document.getElementById('mapTableContainer');
+    const btn = document.getElementById('toggleMapPalletBtn');
+    if(isMapPalletView) {
+      container.classList.add('show-pallets');
+      btn.style.color = 'var(--status-yellow)';
+      btn.style.borderColor = 'var(--status-yellow)';
+      btn.style.background = 'rgba(251, 191, 36, 0.1)';
+    } else {
+      container.classList.remove('show-pallets');
+      btn.style.color = '';
+      btn.style.borderColor = 'var(--border-light)';
+      btn.style.background = '';
+    }
+  }
+
+  function loadMapData() {
     let timer = startLoadingMsg('mapMsgArea', 'MAP LAYOUT');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('mapMsgArea', timer);
-      fetchAndUpdateSyncTime('UpInventory', 'lastMapRefreshedTime');
-
-      let r = res || { grid: [], rowCount: 0 };
-      if (!r.grid || r.grid.length === 0) {
-        document.getElementById('mapMsgArea').textContent = "NO MAP DATA FOUND"; return;
+      if (res && res.data) {
+         const emptyItem = res.data.find(i => String(i["TITLE"]||"").trim().toLowerCase() === "empty/1014");
+         const occupyItem = res.data.find(i => String(i["TITLE"]||"").trim().toLowerCase() === "occupy");
+         const usedItem = res.data.find(i => String(i["TITLE"]||"").trim().toLowerCase() === "used");
+         if(document.getElementById('mapTotEmpty')) document.getElementById('mapTotEmpty').textContent = emptyItem ? emptyItem["DATA"] : 0;
+         if(document.getElementById('mapTotOccupy')) document.getElementById('mapTotOccupy').textContent = occupyItem ? occupyItem["DATA"] : 0;
+         if(document.getElementById('mapTotUsed')) document.getElementById('mapTotUsed').textContent = usedItem ? usedItem["DATA"] : 0;
       }
-      const grid = r.grid;
-      document.getElementById('mapSummaryBox').style.display = "flex"; document.getElementById('mapFilterGroup').style.display = "flex"; 
+    }).getDbData();
 
-      let h = `<table class="compact-table map-table">`;
-      let currentRowGroup = "HEADER";
+    window.google.script.run.withSuccessHandler((alRes) => {
+      const restockLocs = new Map();
+      let parsedCount = 0;
+      
+      if (alRes && alRes.data) {
+        alRes.data.forEach(item => {
+          let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
+          let loc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
+          let palletKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase().includes("PL"));
+          let pallet = palletKey ? String(item[palletKey] || "").trim() : "-";
 
-      grid.forEach((row, rIdx) => {
-        let colA = String(row[0]).trim();
-        if (rIdx > 0 && colA !== "") { currentRowGroup = colA; }
-
-        let colB = String(row[1]).trim();
-        let trClass = rIdx > 0 ? `map-data-row group-${currentRowGroup}` : "";
-        if (colB === "1") { trClass += " map-row-separator"; }
-
-        h += `<tr class="${trClass}">`;
-        row.forEach((cell, cIdx) => {
-          let valStr = String(cell).trim(); let cellClass = ""; let tag = (rIdx === 0 || cIdx === 0) ? "th" : "td";
-
-          if (rIdx > 0 && cIdx === 1) {
-            if (valStr === "3") cellClass = "lvl-3"; else if (valStr === "2") cellClass = "lvl-2"; else if (valStr === "1") cellClass = "lvl-1";
-          }
-          if (rIdx === 0 || cIdx === 0 || cIdx === 1) { h += `<${tag} class="${cellClass}">${valStr}</${tag}>`; } 
-          else {
-            let num = parseFloat(valStr);
-            if (isNaN(num) || num === 0 || valStr === "") { cellClass = "map-zero"; valStr = "."; } 
-            else if (num < 10) { cellClass = "map-low"; } else if (num < 30) { cellClass = "map-mid"; } else { cellClass = "map-high"; }
-            h += `<td class="${cellClass}">${valStr}</td>`;
+          if (loc.length >= 9) {
+            let grp = parseInt(loc.substring(0, 2), 10); 
+            let bay = parseInt(loc.substring(5, 7), 10); 
+            let lvl = parseInt(loc.substring(7, 9), 10);
+            if (!isNaN(grp) && !isNaN(bay) && !isNaN(lvl)) { 
+              let key = `${grp}-${bay}-${lvl}`;
+              if (!restockLocs.has(key)) restockLocs.set(key, new Set());
+              if (pallet !== "" && pallet !== "-") restockLocs.get(key).add(pallet);
+              parsedCount++; 
+            }
           }
         });
-        h += `</tr>`;
-      });
-      h += `</table>`;
-      document.getElementById('mapTableContainer').innerHTML = h; filterMap('ALL');
-    }).withFailureHandler(e => { stopLoadingMsg('mapMsgArea', timer); document.getElementById('mapMsgArea').textContent = "ERROR: " + e.message; }).getMapData();
+      }
+
+      window.google.script.run.withSuccessHandler((res) => {
+        stopLoadingMsg('mapMsgArea', timer); fetchAndUpdateSyncTime('UpInventory', 'lastMapRefreshedTime');
+        let msgEl = document.getElementById('mapMsgArea');
+        if (msgEl) {
+            msgEl.innerHTML = parsedCount > 0 ? `<span style="color:var(--status-green); font-size: 11px;">聯動補貨座標: ${parsedCount} 筆</span>` : `<span style="color:var(--status-yellow); font-size: 11px;">未偵測到補貨任務或座標格式不符</span>`;
+            msgEl.style.display = 'block';
+        }
+
+        let r = res || { grid: [], rowCount: 0 };
+        if (!r.grid || r.grid.length === 0) { if(msgEl) msgEl.textContent = "NO MAP DATA FOUND"; return; }
+        const grid = r.grid; document.getElementById('mapSummaryBox').style.display = "flex"; document.getElementById('mapFilterGroup').style.display = "flex"; 
+
+        let h = `<table class="compact-table map-table">`; let currentRowGroup = 0; let currentRowGroupStr = "HEADER"; const headerBays = [];
+
+        grid.forEach((row, rIdx) => {
+          let colA = String(row[0]).trim(); if (rIdx > 0 && colA !== "") { currentRowGroupStr = colA; currentRowGroup = parseInt(colA, 10); }
+          let colB = String(row[1]).trim(); let trClass = rIdx > 0 ? `map-data-row group-${currentRowGroupStr}` : ""; if (colB === "1") { trClass += " map-row-separator"; }
+
+          h += `<tr class="${trClass}">`;
+          row.forEach((cell, cIdx) => {
+            let valStr = String(cell).trim(); let cellClass = ""; let tag = (rIdx === 0 || cIdx === 0) ? "th" : "td";
+            if (rIdx === 0 && cIdx >= 2) { headerBays[cIdx] = parseInt(valStr, 10); }
+            if (rIdx > 0 && cIdx === 1) { if (valStr === "3") cellClass = "lvl-3"; else if (valStr === "2") cellClass = "lvl-2"; else if (valStr === "1") cellClass = "lvl-1"; }
+            
+            if (rIdx === 0 || cIdx === 0 || cIdx === 1) { 
+              h += `<${tag} class="${cellClass}">${valStr}</${tag}>`; 
+            } 
+            else {
+              let num = parseFloat(valStr); let bay = headerBays[cIdx]; let lvl = parseInt(colB, 10);
+              let targetKey = `${currentRowGroup}-${bay}-${lvl}`;
+              let isRestockTarget = restockLocs.has(targetKey);
+              let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
+
+              if (isNaN(num) || num === 0 || valStr === "") { 
+                valStr = "."; 
+                cellClass = isRestockTarget ? "map-restock-target" : "map-zero"; 
+              } else { 
+                cellClass = isRestockTarget ? "map-restock-target" : "map-normal"; 
+              }
+              
+              let innerHTML = `<span class="cell-qty">${valStr}</span>`;
+              if (isRestockTarget) {
+                innerHTML += `<span class="cell-pallet">${palletCount}</span>`;
+              } else {
+                innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
+              }
+
+              h += `<td class="${cellClass}">${innerHTML}</td>`;
+            }
+          }); h += `</tr>`;
+        }); h += `</table>`;
+        document.getElementById('mapTableContainer').innerHTML = h; filterMap('ALL');
+      }).withFailureHandler(e => { stopLoadingMsg('mapMsgArea', timer); document.getElementById('mapMsgArea').textContent = "ERROR: " + e.message; }).getMapData();
+    }).withFailureHandler(e => { stopLoadingMsg('mapMsgArea', timer); document.getElementById('mapMsgArea').textContent = "ERROR fetching Restock: " + e.message; }).getAlQtyList();
   }
 
   const activeMapFilters = new Set();
   function filterMap(group) {
     const allBtn = document.querySelector('#mapFilterGroup .filter-btn-compact[data-filter="ALL"]');
-    if (group === 'ALL') {
-      activeMapFilters.clear(); document.querySelectorAll('#mapFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active')); allBtn.classList.add('active');
-    } else {
-      const targetBtn = document.querySelector(`#mapFilterGroup .filter-btn-compact[data-filter="${group}"]`);
-      if (activeMapFilters.has(group)) { activeMapFilters.delete(group); targetBtn.classList.remove('active'); } 
-      else { activeMapFilters.add(group); targetBtn.classList.add('active'); }
-      if (activeMapFilters.size === 0) { allBtn.classList.add('active'); } else { allBtn.classList.remove('active'); }
-    }
+    if (group === 'ALL') { activeMapFilters.clear(); document.querySelectorAll('#mapFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active')); allBtn.classList.add('active'); } 
+    else { const targetBtn = document.querySelector(`#mapFilterGroup .filter-btn-compact[data-filter="${group}"]`); if (activeMapFilters.has(group)) { activeMapFilters.delete(group); targetBtn.classList.remove('active'); } else { activeMapFilters.add(group); targetBtn.classList.add('active'); } if (activeMapFilters.size === 0) { allBtn.classList.add('active'); } else { allBtn.classList.remove('active'); } }
     const rows = document.querySelectorAll('.map-data-row');
-    rows.forEach(r => {
-      let rowGroup = null;
-      for (let i = 1; i <= 9; i++) { let g = "0" + i; if (r.classList.contains(`group-${g}`)) { rowGroup = g; break; } }
-      if (activeMapFilters.size === 0) { r.style.display = ''; } 
-      else { if (rowGroup && activeMapFilters.has(rowGroup)) { r.style.display = ''; } else { r.style.display = 'none'; } }
-    });
+    rows.forEach(r => { let rowGroup = null; for (let i = 1; i <= 9; i++) { let g = "0" + i; if (r.classList.contains(`group-${g}`)) { rowGroup = g; break; } } if (activeMapFilters.size === 0) { r.style.display = ''; } else { if (rowGroup && activeMapFilters.has(rowGroup)) { r.style.display = ''; } else { r.style.display = 'none'; } } });
   }
 
-  function loadLoadplanData(force) {
-    const msgId = 'lpMsgArea'; 
-    let timer = startLoadingMsg(msgId, 'LOADPLAN STAT');
-
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('GetLoadingPlan', 'lastLpRefreshedTime');
-      renderLoadplanData(res || { headers: [], data: [], rowCount: 0 });
-    }).withFailureHandler(e => {
-       stopLoadingMsg(msgId, timer);
-       document.getElementById(msgId).textContent="ERROR:"+e.message;
-    }).getLoadplanData();
+  function loadLoadplanData() {
+    let timer = startLoadingMsg('lpMsgArea', 'LOADPLAN STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('lpMsgArea', timer); fetchAndUpdateSyncTime('GetLoadingPlan', 'lastLpRefreshedTime'); renderLoadplanData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('lpMsgArea', timer); document.getElementById('lpMsgArea').textContent="ERROR:"+e.message; }).getLoadplanData();
   }
 
   function renderLoadplanData(res) {
-    document.getElementById('totLpRows').textContent = res.rowCount||0;
-    
-    // 🌟 1. 產生表頭時，隱藏 SO 欄位
+    document.getElementById('totLpRows').textContent = res.rowCount || 0;
     let h = `<table class="compact-table"><thead><tr>`; 
-    (res.headers || []).forEach(c => {
-      let cln = c ? c.toString().trim().toUpperCase() : "";
-      if (cln === "SO" || cln === "S/O") return; // 略過 SO
-      h+=`<th>${c}</th>`;
-    }); 
-    h+=`</tr></thead><tbody>`;
+    (res.headers || []).forEach(c => { let cln = c ? c.toString().trim().toUpperCase() : ""; if (cln === "SO" || cln === "S/O") return; h += `<th>${c}</th>`; }); 
+    h += `</tr></thead><tbody>`;
     
-    let prevDate = null; 
-    let dateColKey = (res.headers || []).find(h => h.toUpperCase().trim() === "DATE") || (res.headers || [])[0]; 
+    let prevDate = null; let dateColKey = (res.headers || []).find(h => h.toUpperCase().trim() === "DATE") || (res.headers || [])[0]; 
 
-    (res.data||[]).forEach((i, idx) => {
-      let currentDate = i[dateColKey] !== undefined ? String(i[dateColKey]).trim() : "";
-      let isFirstRow = (idx === 0);
-      
+    (res.data || []).forEach((i, idx) => {
+      let currentDate = i[dateColKey] !== undefined ? String(i[dateColKey]).trim() : ""; let isFirstRow = (idx === 0);
       let isNewDateGroup = (!isFirstRow && currentDate !== "" && currentDate !== prevDate);
       if (currentDate !== "") prevDate = currentDate; 
-
       let trStyle = isNewDateGroup ? "border-top: 2px solid rgba(56, 189, 248, 0.6);" : "";
-
-      h+=`<tr style="${trStyle}">`; 
+      h += `<tr style="${trStyle}">`; 
       
       (res.headers || []).forEach(c => {
         let cln = c ? c.toString().trim().toUpperCase() : "";
-        
-        // 🌟 2. 產生資料列時，同步隱藏 SO 欄位
         if (cln === "SO" || cln === "S/O") return; 
 
-        let v = i[c] !== undefined ? i[c] : ""; 
-        let tdStyle = "";
-        let displayValue = v;
+        let v = i[c] !== undefined ? i[c] : ""; let tdStyle = ""; let displayValue = v;
+        if (cln === "CBM" || cln === "CBMO") { let num = parseFloat(v); if (!isNaN(num)) { displayValue = Math.round(num); } }
 
-        // CBM / CBMO 自動四捨五入取整數
-        if (cln === "CBM" || cln === "CBMO") {
-          let num = parseFloat(v);
-          if (!isNaN(num)) {
-             displayValue = Math.round(num);
-          }
-        }
-
-        // 針對 DETAILS 欄位套用專屬的 CSS 排版與高亮
         if (cln === "DETAILSIN" || cln === "DETAILSOUT" || cln.includes("DETAILS")) {
           tdStyle += ` max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.1; padding: 2px 4px; font-size: 11px;`;
           let formattedStr = String(displayValue);
@@ -1427,54 +1238,25 @@
           displayValue = formattedStr;
         } 
 
-        // 將 TIME, PCS, CTNS, CTNO, CBM, CBMO, CAT 放大加粗
-        if (["TIME", "PCS", "CTNS", "CTNO", "CBM", "CBMO", "CAT"].includes(cln)) {
-          tdStyle += ` font-size: 14px; font-weight: 700;`;
-        }
-
-        // 日期欄位淡化與分組處理
-        if (c === dateColKey) {
-            if (isFirstRow || isNewDateGroup) {
-                displayValue = `<span style="color: var(--accent-cyan); font-weight: bold;">${v}</span>`;
-            } else {
-                displayValue = `<span style="opacity: 0.2;">${v}</span>`; 
-            }
-        }
+        if (["TIME", "PCS", "CTNS", "CTNO", "CBM", "CBMO", "CAT"].includes(cln)) { tdStyle += ` font-size: 14px; font-weight: 700;`; }
+        if (c === dateColKey) { if (isFirstRow || isNewDateGroup) { displayValue = `<span style="color: var(--accent-cyan); font-weight: bold;">${v}</span>`; } else { displayValue = `<span style="opacity: 0.2;">${v}</span>`; } }
 
         if (displayValue === 0 || String(displayValue).trim() === "0") displayValue = ""; 
-        h+=`<td style="${tdStyle.trim()}">${displayValue}</td>`;
-      }); 
-      h+=`</tr>`;
-    }); 
-    h+=`</tbody></table>`;
+        h += `<td style="${tdStyle.trim()}">${displayValue}</td>`;
+      }); h += `</tr>`;
+    }); h += `</tbody></table>`;
     
-    document.getElementById('lpSummaryBox').style.display = "flex"; 
-    document.getElementById('lpTableContainer').innerHTML = h;
+    document.getElementById('lpSummaryBox').style.display = "flex"; document.getElementById('lpTableContainer').innerHTML = h;
   }
 
-  function loadUphData(force) {
-    const msgId = 'uphMsgArea'; 
-    let timer = startLoadingMsg(msgId, 'UPH STAT');
-
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg(msgId, timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime');
-      renderUphData(res || { headers: [], data: [], rowCount: 0 });
-    }).withFailureHandler(e => {
-       stopLoadingMsg(msgId, timer);
-       document.getElementById(msgId).textContent="ERROR:"+e.message;
-    }).getUphData();
+  function loadUphData() {
+    let timer = startLoadingMsg('uphMsgArea', 'UPH STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('uphMsgArea', timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime'); renderUphData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('uphMsgArea', timer); document.getElementById('uphMsgArea').textContent="ERROR:"+e.message; }).getUphData();
   }
 
   function renderUphData(res) {
     document.getElementById('totUphRows').textContent = res.rowCount||0;
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
-    (res.data||[]).forEach(i => {
-      h+=`<tr>`; (res.headers || []).forEach(c => {
-        let v = i[c] !== undefined ? i[c] : ""; 
-        if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td>${v}</td>`;
-      }); h+=`</tr>`;
-    }); h+=`</tbody></table>`;
-    document.getElementById('uphSummaryBox').style.display = "flex"; document.getElementById('uphTableContainer').innerHTML = h;
+    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`; (res.data||[]).forEach(i => { h+=`<tr>`; (res.headers || []).forEach(c => { let v = i[c] !== undefined ? i[c] : ""; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td>${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`; document.getElementById('uphSummaryBox').style.display = "flex"; document.getElementById('uphTableContainer').innerHTML = h;
   }
 
   function startAuditSession() {
@@ -1482,95 +1264,31 @@
     const b = document.getElementById('auditLoadBtn'); const msg = document.getElementById('auditMsgArea');
     b.disabled = true; b.innerHTML = '<i class="ph ph-spinner ph-spin"></i>'; 
     document.getElementById('feedbackTitle').innerHTML = '<i class="ph ph-barcode"></i> AWAITING SCAN...'; document.getElementById('feedbackDetails').innerHTML = 'SYS: 0 | SCN: 0';
-    
     let timer = startLoadingMsg('auditMsgArea', 'AUDIT DATA');
 
     window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('auditMsgArea', timer);
-      b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>';
+      stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>';
       if (!res || !res.data || res.data.length === 0) { msg.textContent = `⚠️ NO LOC RECORD (${loc}) - BLIND MODE`; msg.style.color="var(--status-yellow)"; }
       auditState = { location: loc, systemItemsMap: {}, scannedCounts: {}, scanHistoryStack: [], lastRawCodeMap: {}, lastLookupCodeMap: {}, activeFilter: 'all', lastScannedKey: null };
-      if (res && res.data) {
-        res.data.forEach(item => {
-          const key = (item["TAG_ID"] || item["SUPPLIER_SKU"] || item["SKU_ID"] || "UNKNOWN").toString().trim().toUpperCase();
-          if (!auditState.systemItemsMap[key]) {
-            auditState.systemItemsMap[key] = { key: key, sysQty: 0, tag: item["TAG_ID"]||"-", sku: item["SKU_ID"]||"-", barcode: item["SUPPLIER_SKU"]||"-", style: item["Style"]||"-", size: item["Size"]||"-", palletId: item["Pallet ID"]||"-", loc: item["LOCATION_ID"]||loc };
-          }
-          auditState.systemItemsMap[key].sysQty += (parseFloat(item["QTY"]) || 0);
-        });
-      }
-      document.getElementById('auditScanSection').style.display = 'block'; document.getElementById('auditSummaryBox').style.display = 'flex';
-      document.getElementById('auditFilterGroup').style.display = 'flex'; document.getElementById('auditScanInput').focus();
-      renderAuditComparison();
-    }).withFailureHandler((e) => { 
-      stopLoadingMsg('auditMsgArea', timer);
-      b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>'; 
-      msg.textContent = "LOAD ERROR: " + e.message; 
-    }).searchLocation(loc);
+      if (res && res.data) { res.data.forEach(item => { const key = (item["TAG_ID"] || item["SUPPLIER_SKU"] || item["SKU_ID"] || "UNKNOWN").toString().trim().toUpperCase(); if (!auditState.systemItemsMap[key]) { auditState.systemItemsMap[key] = { key: key, sysQty: 0, tag: item["TAG_ID"]||"-", sku: item["SKU_ID"]||"-", barcode: item["SUPPLIER_SKU"]||"-", style: item["Style"]||"-", size: item["Size"]||"-", palletId: item["Pallet ID"]||"-", loc: item["LOCATION_ID"]||loc }; } auditState.systemItemsMap[key].sysQty += (parseFloat(item["QTY"]) || 0); }); }
+      document.getElementById('auditScanSection').style.display = 'block'; document.getElementById('auditSummaryBox').style.display = 'flex'; document.getElementById('auditFilterGroup').style.display = 'flex'; document.getElementById('auditScanInput').focus(); renderAuditComparison();
+    }).withFailureHandler((e) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>'; msg.textContent = "LOAD ERROR: " + e.message; }).searchLocation(loc);
   }
 
   function handleAuditScan(e) { if (e.key === 'Enter') { e.preventDefault(); const i = document.getElementById('auditScanInput'); let v = i.value.trim().toUpperCase(); if (!v) return; processScannedCode(v); i.value = ""; i.focus(); } }
-  
-  function processScannedCode(rawScanned) {
-    const lk = rawScanned.length > 13 ? rawScanned.substring(0, 13) : rawScanned; let tk = null;
-    const mKeys = Object.keys(auditState.systemItemsMap).filter(k => { const i = auditState.systemItemsMap[k]; return (i.barcode && (i.barcode===lk||i.barcode===rawScanned)) || (i.sku && (i.sku===lk||i.sku===rawScanned)); });
-    if (mKeys.length > 0) { const uk = mKeys.find(k => (auditState.scannedCounts[k]||0) < auditState.systemItemsMap[k].sysQty); tk = uk ? uk : mKeys[0]; }
-    if (!tk) tk = lk; processAuditItem(tk, rawScanned, lk);
-  }
-  
-  function processAuditItem(tk, raw, lk) {
-    auditState.lastRawCodeMap[tk] = raw; auditState.lastLookupCodeMap[tk] = lk; auditState.scannedCounts[tk] = (auditState.scannedCounts[tk]||0) + 1;
-    auditState.lastScannedKey = tk; auditState.scanHistoryStack.push({ targetKey: tk, rawScanned: raw, lookupCode: lk });
-    const c = auditState.scannedCounts[tk]; const s = auditState.systemItemsMap[tk]; const sq = s ? s.sysQty : 0; const isE = c > sq;
-    if (isE) { playScanSound('extra'); triggerVibration([80, 50, 80]); } else { playScanSound('match'); triggerVibration(60); }
-    showScanFeedbackBanner(tk, raw, c, sq, isE, s, false); renderAuditComparison();
-  }
-  
-  function showScanFeedbackBanner(tk, raw, c, sq, isE, s, isUndo) {
-    const b = document.getElementById('scanFeedbackBanner');
-    b.style.borderColor = isUndo ? 'var(--status-red)' : (isE ? 'var(--status-yellow)' : 'var(--status-green)');
-    const t = isUndo ? '⛔ REMOVED (-1)' : (isE ? '🟡 EXTRA (+1)' : '✅ MATCH (+1)');
-    document.getElementById('feedbackTitle').innerHTML = `<span style="color:${b.style.borderColor}">${t} (${raw})</span>`;
-    document.getElementById('feedbackDetails').innerHTML = `SYS:<span style="color:#fff;font-family:'Roboto Mono'; margin-right:6px;">${sq}</span>SCN:<span style="color:${b.style.borderColor};font-family:'Roboto Mono';">${c}</span>`;
-  }
-  
-  function undoLastScan() {
-    if (auditState.scanHistoryStack.length === 0) return;
-    const l = auditState.scanHistoryStack.pop(); if (auditState.scannedCounts[l.targetKey] > 0) auditState.scannedCounts[l.targetKey]--;
-    auditState.lastScannedKey = auditState.scanHistoryStack.length > 0 ? auditState.scanHistoryStack[auditState.scanHistoryStack.length-1].targetKey : null;
-    playScanSound('undo'); triggerVibration([60, 40, 60]);
-    const s = auditState.systemItemsMap[l.targetKey]; showScanFeedbackBanner(l.targetKey, l.rawScanned, auditState.scannedCounts[l.targetKey]||0, s ? s.sysQty : 0, false, s, true); renderAuditComparison();
-  }
+  function processScannedCode(rawScanned) { const lk = rawScanned.length > 13 ? rawScanned.substring(0, 13) : rawScanned; let tk = null; const mKeys = Object.keys(auditState.systemItemsMap).filter(k => { const i = auditState.systemItemsMap[k]; return (i.barcode && (i.barcode===lk||i.barcode===rawScanned)) || (i.sku && (i.sku===lk||i.sku===rawScanned)); }); if (mKeys.length > 0) { const uk = mKeys.find(k => (auditState.scannedCounts[k]||0) < auditState.systemItemsMap[k].sysQty); tk = uk ? uk : mKeys[0]; } if (!tk) tk = lk; processAuditItem(tk, rawScanned, lk); }
+  function processAuditItem(tk, raw, lk) { auditState.lastRawCodeMap[tk] = raw; auditState.lastLookupCodeMap[tk] = lk; auditState.scannedCounts[tk] = (auditState.scannedCounts[tk]||0) + 1; auditState.lastScannedKey = tk; auditState.scanHistoryStack.push({ targetKey: tk, rawScanned: raw, lookupCode: lk }); const c = auditState.scannedCounts[tk]; const s = auditState.systemItemsMap[tk]; const sq = s ? s.sysQty : 0; const isE = c > sq; if (isE) { playScanSound('extra'); triggerVibration([80, 50, 80]); } else { playScanSound('match'); triggerVibration(60); } showScanFeedbackBanner(tk, raw, c, sq, isE, s, false); renderAuditComparison(); }
+  function showScanFeedbackBanner(tk, raw, c, sq, isE, s, isUndo) { const b = document.getElementById('scanFeedbackBanner'); b.style.borderColor = isUndo ? 'var(--status-red)' : (isE ? 'var(--status-yellow)' : 'var(--status-green)'); const t = isUndo ? '⛔ REMOVED (-1)' : (isE ? '🟡 EXTRA (+1)' : '✅ MATCH (+1)'); document.getElementById('feedbackTitle').innerHTML = `<span style="color:${b.style.borderColor}">${t} (${raw})</span>`; document.getElementById('feedbackDetails').innerHTML = `SYS:<span style="color:#fff;font-family:'Roboto Mono'; margin-right:6px;">${sq}</span>SCN:<span style="color:${b.style.borderColor};font-family:'Roboto Mono';">${c}</span>`; }
+  function undoLastScan() { if (auditState.scanHistoryStack.length === 0) return; const l = auditState.scanHistoryStack.pop(); if (auditState.scannedCounts[l.targetKey] > 0) auditState.scannedCounts[l.targetKey]--; auditState.lastScannedKey = auditState.scanHistoryStack.length > 0 ? auditState.scanHistoryStack[auditState.scanHistoryStack.length-1].targetKey : null; playScanSound('undo'); triggerVibration([60, 40, 60]); const s = auditState.systemItemsMap[l.targetKey]; showScanFeedbackBanner(l.targetKey, l.rawScanned, auditState.scannedCounts[l.targetKey]||0, s ? s.sysQty : 0, false, s, true); renderAuditComparison(); }
 
-  function openSyncConfirmModal() {
-    if (!auditState.location) { document.getElementById('auditMsgArea').textContent = "SELECT LOC FIRST"; return; }
-    document.getElementById('modalSysQty').textContent = document.getElementById('auditSysQty').textContent; document.getElementById('modalScannedQty').textContent = document.getElementById('auditScannedQty').textContent; document.getElementById('modalMissingQty').textContent = document.getElementById('auditMissingQty').textContent; document.getElementById('modalExtraQty').textContent = document.getElementById('auditExtraQty').textContent;
-    document.getElementById('syncConfirmModal').style.display = 'flex';
-  }
-  
+  function openSyncConfirmModal() { if (!auditState.location) { document.getElementById('auditMsgArea').textContent = "SELECT LOC FIRST"; return; } document.getElementById('modalSysQty').textContent = document.getElementById('auditSysQty').textContent; document.getElementById('modalScannedQty').textContent = document.getElementById('auditScannedQty').textContent; document.getElementById('modalMissingQty').textContent = document.getElementById('auditMissingQty').textContent; document.getElementById('modalExtraQty').textContent = document.getElementById('auditExtraQty').textContent; document.getElementById('syncConfirmModal').style.display = 'flex'; }
   function closeSyncModal() { document.getElementById('syncConfirmModal').style.display = 'none'; }
   function confirmFinishAuditSync() { closeSyncModal(); finishAuditSync(); }
   
   function finishAuditSync() {
-    const b = document.getElementById('finishSyncConfirmBtn'); b.disabled = true; 
-    let timer = startLoadingMsg('auditMsgArea', 'SYNCING CLOUD');
-
-    const diffs = []; let ts = 0, tc = 0;
-    new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => {
-      const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: "", sku: "-", barcode: "-", style: "-", size: "-", palletId: "-" };
-      const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c;
-      if (d !== 0) diffs.push({ key: k, tagId: s.tag!=="-"?s.tag:"", palletId: s.palletId||"-", rawScannedCode: auditState.lastRawCodeMap[k]||"", lookupCode: s.barcode!=="-"?s.barcode:k, sku: s.sku, style: s.style, size: s.size, sysQty: s.sysQty, scannedQty: c, diff: d });
-    });
-    window.google.script.run.withSuccessHandler((r) => {
-      stopLoadingMsg('auditMsgArea', timer);
-      b.disabled = false; 
-      const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-green)"; msg.textContent = r.message;
-    }).withFailureHandler((e) => {
-      stopLoadingMsg('auditMsgArea', timer);
-      b.disabled = false; 
-      const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-red)"; msg.textContent = "ERROR: " + e.message; 
-      playScanSound('error');
-    }).saveAuditRecord({ location: auditState.location, totalSysQty: ts, totalScannedQty: tc, hasDiff: diffs.length > 0, items: diffs });
+    const b = document.getElementById('finishSyncConfirmBtn'); b.disabled = true; let timer = startLoadingMsg('auditMsgArea', 'SYNCING CLOUD');
+    const diffs = []; let ts = 0, tc = 0; new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => { const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: "", sku: "-", barcode: "-", style: "-", size: "-", palletId: "-" }; const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c; if (d !== 0) diffs.push({ key: k, tagId: s.tag!=="-"?s.tag:"", palletId: s.palletId||"-", rawScannedCode: auditState.lastRawCodeMap[k]||"", lookupCode: s.barcode!=="-"?s.barcode:k, sku: s.sku, style: s.style, size: s.size, sysQty: s.sysQty, scannedQty: c, diff: d }); });
+    window.google.script.run.withSuccessHandler((r) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-green)"; msg.textContent = r.message; }).withFailureHandler((e) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-red)"; msg.textContent = "ERROR: " + e.message; playScanSound('error'); }).saveAuditRecord({ location: auditState.location, totalSysQty: ts, totalScannedQty: tc, hasDiff: diffs.length > 0, items: diffs });
   }
 
   function resetAuditSession() { document.getElementById('resetConfirmModal').style.display = 'flex'; }
@@ -1579,79 +1297,18 @@
   function filterAuditResult(t) { auditState.activeFilter = t; document.querySelectorAll('.filter-btn-compact').forEach(b => b.classList.remove('active')); document.getElementById('filter' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); renderAuditComparison(); }
 
   function renderAuditComparison() {
-    const cont = document.getElementById('auditResultContainer'); cont.innerHTML = "";
-    let ts=0, tc=0, mc=0, ec=0, mic=0, eic=0, mac=0;
-    const plSet = new Set(), tagSet = new Set(), locSet = new Set();
-    const items = [];
-    
-    new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => {
-      const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: k, sku: "-", barcode: "-", style: "-", size: "-", palletId: "-", loc: auditState.location };
-      const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c;
-      if (s.palletId && s.palletId !== "-") plSet.add(s.palletId);
-      if (s.tag && s.tag !== "-") tagSet.add(s.tag);
-      if (s.loc && s.loc !== "-") locSet.add(s.loc);
-      
-      let st = 'match'; 
-      if (d < 0) { st = 'missing'; mc += Math.abs(d); mic++; } else if (d > 0) { st = 'extra'; ec += d; eic++; } else mac++;
-      items.push({ ...s, scannedQty: c, diff: d, status: st });
-    });
-
-    document.getElementById('auditSysPlc').textContent = plSet.size;
-    document.getElementById('auditSysTag').textContent = tagSet.size;
-    document.getElementById('auditSysLoc').textContent = locSet.size;
-    document.getElementById('auditSysQty').textContent = ts;
-    document.getElementById('auditScannedQty').textContent = tc;
-    document.getElementById('auditMissingQty').textContent = mc;
-    document.getElementById('auditExtraQty').textContent = ec;
-    
-    document.getElementById('fAll').textContent = `(${items.length})`;
-    document.getElementById('fMis').textContent = `(${mic})`;
-    document.getElementById('fExt').textContent = `(${eic})`;
-    document.getElementById('fMat').textContent = `(${mac})`;
-
-    const filtered = items.filter(i => auditState.activeFilter === 'all' || i.status === auditState.activeFilter);
-    if (filtered.length === 0) { cont.innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:12px;">NO RECORD FOUND</div>`; return; }
-
-    let h = `<div class="compact-table-wrapper"><table class="compact-table">
-      <thead><tr><th style="width:30px;">+</th><th>SYS</th><th>SCN</th><th>PL</th><th>Barcode</th><th>TAG</th><th>LOC</th><th>Style</th><th>Sz</th><th>SKU</th></tr></thead><tbody>`;
-    
+    const cont = document.getElementById('auditResultContainer'); cont.innerHTML = ""; let ts=0, tc=0, mc=0, ec=0, mic=0, eic=0, mac=0; const plSet = new Set(), tagSet = new Set(), locSet = new Set(); const items = [];
+    new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => { const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: k, sku: "-", barcode: "-", style: "-", size: "-", palletId: "-", loc: auditState.location }; const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c; if (s.palletId && s.palletId !== "-") plSet.add(s.palletId); if (s.tag && s.tag !== "-") tagSet.add(s.tag); if (s.loc && s.loc !== "-") locSet.add(s.loc); let st = 'match'; if (d < 0) { st = 'missing'; mc += Math.abs(d); mic++; } else if (d > 0) { st = 'extra'; ec += d; eic++; } else mac++; items.push({ ...s, scannedQty: c, diff: d, status: st }); });
+    document.getElementById('auditSysPlc').textContent = plSet.size; document.getElementById('auditSysTag').textContent = tagSet.size; document.getElementById('auditSysLoc').textContent = locSet.size; document.getElementById('auditSysQty').textContent = ts; document.getElementById('auditScannedQty').textContent = tc; document.getElementById('auditMissingQty').textContent = mc; document.getElementById('auditExtraQty').textContent = ec;
+    document.getElementById('fAll').textContent = `(${items.length})`; document.getElementById('fMis').textContent = `(${mic})`; document.getElementById('fExt').textContent = `(${eic})`; document.getElementById('fMat').textContent = `(${mac})`;
+    const filtered = items.filter(i => auditState.activeFilter === 'all' || i.status === auditState.activeFilter); if (filtered.length === 0) { cont.innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:12px;">NO RECORD FOUND</div>`; return; }
+    let h = `<div class="compact-table-wrapper"><table class="compact-table"><thead><tr><th style="width:30px;">+</th><th>SYS</th><th>SCN</th><th>PL</th><th>Barcode</th><th>TAG</th><th>LOC</th><th>Style</th><th>Sz</th><th>SKU</th></tr></thead><tbody>`;
     filtered.forEach(i => {
-      const isL = (i.key === auditState.lastScannedKey); const rCls = isL ? 'last-scanned-highlight' : '';
-      let bLeft = i.status === 'missing' ? 'var(--status-red)' : (i.status === 'extra' ? 'var(--status-yellow)' : 'var(--status-green)');
-      let sColor = i.scannedQty > i.sysQty ? 'var(--status-yellow)' : (i.scannedQty === 0 ? 'var(--text-muted)' : 'var(--status-green)');
-      
-      let plStr = i.palletId !== "-" ? String(i.palletId).trim() : "";
-      let plTail = plStr.length >= 5 ? plStr.slice(-5) : "";
-      let tagStr = i.tag !== "-" ? String(i.tag).trim() : "";
-      let tagTarget = tagStr.length >= 10 ? tagStr.slice(-10, -5) : "";
-      
-      let plDisplay = plStr;
-      let tagDisplay = tagStr;
-      
-      if (plTail !== "" && tagTarget !== "" && plTail === tagTarget) {
-        let plPrefix = plStr.slice(0, -5);
-        plDisplay = `<span style="color:var(--text-muted);">${plPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${plTail}</span>`;
-        let tagPrefix = tagStr.slice(0, -10);
-        let tagSuffix = tagStr.slice(-5);
-        tagDisplay = `<span style="color:var(--text-muted);">${tagPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${tagTarget}</span><span style="color:var(--text-muted);">${tagSuffix}</span>`;
-      } else {
-        plDisplay = `<span style="color:var(--text-muted);">${plStr}</span>`;
-        tagDisplay = `<span style="color:var(--text-muted);">${tagStr}</span>`;
-      }
-
-      h += `
-        <tr class="${rCls}">
-          <td style="border-left: 3px solid ${bLeft};"><button class="icon-btn" style="min-width:24px; height:24px;" onclick="incrementAuditItem('${i.key}')"><i class="ph ph-plus" style="font-size:12px;"></i></button></td>
-          <td style="color:var(--text-muted);">${i.sysQty}</td>
-          <td style="color:${sColor}; font-size:14px; font-weight:700;">${i.scannedQty}</td>
-          <td>${plDisplay}</td>
-          <td style="color:var(--accent-cyan); font-size:11px;">${i.barcode!=="-"?i.barcode:""}</td>
-          <td style="text-align:left; font-size:11px;">${tagDisplay}</td>
-          <td style="color:var(--text-muted);">${auditState.location}</td>
-          <td>${i.style}</td><td>${i.size}</td><td>${i.sku}</td>
-        </tr>`;
-    });
-    h += `</tbody></table></div>`; cont.innerHTML = h;
+      const isL = (i.key === auditState.lastScannedKey); const rCls = isL ? 'last-scanned-highlight' : ''; let bLeft = i.status === 'missing' ? 'var(--status-red)' : (i.status === 'extra' ? 'var(--status-yellow)' : 'var(--status-green)'); let sColor = i.scannedQty > i.sysQty ? 'var(--status-yellow)' : (i.scannedQty === 0 ? 'var(--text-muted)' : 'var(--status-green)');
+      let plStr = i.palletId !== "-" ? String(i.palletId).trim() : ""; let plTail = plStr.length >= 5 ? plStr.slice(-5) : ""; let tagStr = i.tag !== "-" ? String(i.tag).trim() : ""; let tagTarget = tagStr.length >= 10 ? tagStr.slice(-10, -5) : ""; let plDisplay = plStr; let tagDisplay = tagStr;
+      if (plTail !== "" && tagTarget !== "" && plTail === tagTarget) { let plPrefix = plStr.slice(0, -5); plDisplay = `<span style="color:var(--text-muted);">${plPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${plTail}</span>`; let tagPrefix = tagStr.slice(0, -10); let tagSuffix = tagStr.slice(-5); tagDisplay = `<span style="color:var(--text-muted);">${tagPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${tagTarget}</span><span style="color:var(--text-muted);">${tagSuffix}</span>`; } else { plDisplay = `<span style="color:var(--text-muted);">${plStr}</span>`; tagDisplay = `<span style="color:var(--text-muted);">${tagStr}</span>`; }
+      h += `<tr class="${rCls}"><td style="border-left: 3px solid ${bLeft};"><button class="icon-btn" style="min-width:24px; height:24px;" onclick="incrementAuditItem('${i.key}')"><i class="ph ph-plus" style="font-size:12px;"></i></button></td><td style="color:var(--text-muted);">${i.sysQty}</td><td style="color:${sColor}; font-size:14px; font-weight:700;">${i.scannedQty}</td><td>${plDisplay}</td><td style="color:var(--accent-cyan); font-size:11px;">${i.barcode!=="-"?i.barcode:""}</td><td style="text-align:left; font-size:11px;">${tagDisplay}</td><td style="color:var(--text-muted);">${auditState.location}</td><td>${i.style}</td><td>${i.size}</td><td>${i.sku}</td></tr>`;
+    }); h += `</tbody></table></div>`; cont.innerHTML = h;
   }
 </script>
 </body>
