@@ -1394,7 +1394,7 @@
         let tdStyle = "";
         let displayValue = v;
 
-        // 🌟 更新判斷條件：改為尋找 DETAILSIN 與 DETAILSOUT (或包含 DETAILS 的欄位)
+        // 🌟 尋找 DETAILSIN 與 DETAILSOUT (或包含 DETAILS 的欄位) 進行緊湊排版與高亮
         if (cln === "DETAILSIN" || cln === "DETAILSOUT" || cln.includes("DETAILS")) {
           // 維持高緊湊度排版
           tdStyle = `max-width: 25vw; min-width: 150px; white-space: normal; word-break: break-word; text-align: left; line-height: 1.1; padding: 2px 4px; font-size: 11px;`;
@@ -1411,6 +1411,13 @@
           formattedStr = formattedStr.replace(/\b(SS|FW)/gi, '<span style="color:#fb7185; font-weight:700;">$1</span>');
           
           displayValue = formattedStr;
+        } 
+        // 🌟 針對 CBM 與 CBMO 欄位，自動四捨五入取整數
+        else if (cln === "CBM" || cln === "CBMO") {
+          let num = parseFloat(v);
+          if (!isNaN(num)) {
+             displayValue = Math.round(num);
+          }
         }
 
         if (c === dateColKey) {
