@@ -295,6 +295,17 @@
   </div>
 </div>
 
+<div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
+  <div class="glass-box" style="border-color: var(--accent-cyan); max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;" onclick="event.stopPropagation();">
+    <div class="pin-title" style="margin-bottom: 12px;"><i class="ph-fill ph-package"></i> 棧板清單</div>
+    <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 14px; font-weight: 700; margin-bottom: 8px; font-family: 'Roboto Mono', monospace;">LOC: --</div>
+    <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 12px; overflow-y: auto; flex: 1;">
+      <div id="palletModalList" style="display: flex; flex-direction: column; gap: 8px; text-align: left;"></div>
+    </div>
+    <button class="primary-btn" style="width: 100%; margin-top: 16px; padding: 12px;" onclick="closePalletModal()">關閉 (CLOSE)</button>
+  </div>
+</div>
+
 <div class="container" id="mainContainer" style="display: none;">
   
   <div class="sys-header">
@@ -1093,6 +1104,57 @@
     }
   }
 
+  function showPalletModal(locStr, encodedPallets) {
+    document.getElementById('palletModalOverlay').style.display = 'flex';
+    
+    // 重新組合字串：08街- 29列 - 3/F
+    let parts = String(locStr).split(' - ');
+    let displayLoc = locStr;
+    if (parts.length === 3) {
+        displayLoc = `${parts[0]}街- ${parts[1]}列 - ${parts[2]}/F`;
+    }
+    document.getElementById('palletModalSubtitle').innerHTML = `LOC: <span style="font-size:14px;">${displayLoc}</span>`;
+    
+    const listContainer = document.getElementById('palletModalList');
+    listContainer.innerHTML = '';
+    
+    try {
+      const pallets = JSON.parse(decodeURIComponent(encodedPallets));
+      if (!pallets || pallets.length === 0) {
+        listContainer.innerHTML = '<div style="color:var(--status-yellow); text-align:center; font-size:12px;">無棧板資料 (No Pallet Data)</div>';
+        return;
+      }
+      
+      let html = '';
+      pallets.forEach((p, idx) => {
+        let pStr = String(p).trim();
+        let pDisplay = pStr;
+        
+        // 獨立調整 Modal 內的棧板字體大小
+        if (pStr !== "-" && pStr.length > 5) {
+            let prefix = pStr.substring(0, pStr.length - 5);
+            let suffix = pStr.substring(pStr.length - 5);
+            pDisplay = `<span style="color:var(--text-muted); font-size:12px;">${prefix}</span><span style="color:var(--status-yellow); font-weight:700; font-size:16px; text-shadow:0 0 5px rgba(251,191,36,0.5);">${suffix}</span>`;
+        } else {
+            pDisplay = `<span style="font-size:16px; color:var(--status-yellow); font-weight:700;">${pStr}</span>`;
+        }
+
+        html += `<div style="background:var(--bg-card); padding:8px 12px; border-radius:4px; border-left:3px solid var(--status-yellow); display:flex; justify-content:space-between; align-items:center;">
+                   <span style="color:var(--text-muted); font-size:12px;">#${idx + 1}</span>
+                   <span style="font-family:'Roboto Mono', monospace;">${pDisplay}</span>
+                 </div>`;
+      });
+      listContainer.innerHTML = html;
+    } catch (e) {
+      listContainer.innerHTML = '<div style="color:var(--status-red); text-align:center; font-size:12px;">資料解析錯誤</div>';
+    }
+  }
+
+  function closePalletModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('palletModalOverlay').style.display = 'none';
+  }
+
   function loadMapData() {
     let timer = startLoadingMsg('mapMsgArea', 'MAP LAYOUT');
 
@@ -1173,13 +1235,22 @@
               }
               
               let innerHTML = `<span class="cell-qty">${valStr}</span>`;
+              let clickAttr = "";
+
               if (isRestockTarget) {
                 innerHTML += `<span class="cell-pallet">${palletCount}</span>`;
+                // 將棧板資料轉為 JSON 供點擊事件讀取
+                let palletArr = Array.from(restockLocs.get(targetKey));
+                let encodedData = encodeURIComponent(JSON.stringify(palletArr));
+                let displayLoc = `${currentRowGroupStr} - ${String(bay).padStart(2, '0')} - ${lvl}`;
+                
+                // 綁定點擊事件並加上手指游標
+                clickAttr = `onclick="showPalletModal('${displayLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看棧板清單"`;
               } else {
                 innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
               }
 
-              h += `<td class="${cellClass}">${innerHTML}</td>`;
+              h += `<td class="${cellClass}" ${clickAttr}>${innerHTML}</td>`;
             }
           }); h += `</tr>`;
         }); h += `</table>`;
