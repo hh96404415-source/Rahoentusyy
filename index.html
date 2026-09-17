@@ -196,14 +196,26 @@
       border-bottom: 2px solid rgba(56, 189, 248, 0.4) !important;
     }
 
-    .map-zero { color: rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.1); font-weight: normal; }
-    .map-normal { color: #f8fafc; }
-    .map-restock-target { 
+    .compact-table.map-table td.map-zero { color: rgba(255, 255, 255, 0.15) !important; font-weight: normal !important; }
+    .compact-table.map-table td.map-normal { color: #f8fafc !important; }
+
+    .compact-table.map-table td.map-restock-target { 
       background-color: rgba(56, 189, 248, 0.25) !important; 
       color: #38bdf8 !important; 
       font-weight: 900 !important; 
-      text-shadow: 0 0 5px rgba(56, 189, 248, 0.8); 
-      border: 1px solid rgba(56, 189, 248, 0.5) !important; 
+      text-shadow: 0 0 5px rgba(56, 189, 248, 0.8) !important; 
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.6) !important; 
+      position: relative !important; 
+      z-index: 2 !important; 
+    }
+    .compact-table.map-table tr:hover td.map-restock-target {
+      background-color: rgba(56, 189, 248, 0.35) !important;
+      box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.9) !important;
+    }
+
+    .show-pallets .map-restock-target .cell-pallet {
+      color: #fde047 !important;
+      text-shadow: 0 0 5px rgba(253, 224, 71, 0.8) !important;
     }
 
     .gao-total-row td { background: rgba(251, 191, 36, 0.1) !important; color: var(--status-yellow) !important; font-weight: 700; border-top: 1px solid var(--status-yellow) !important; }
@@ -239,7 +251,6 @@
 
     .message { font-size: 12px; color: var(--status-red); font-weight: bold; margin-bottom: 8px; text-align: center; }
 
-    /* 新增：MAP 棧板數切換功能樣式 */
     .show-pallets .cell-qty { display: none !important; }
     .show-pallets .cell-pallet { display: inline-block !important; font-weight: 900; color: #fde047; text-shadow: 0 0 5px rgba(253, 224, 71, 0.8); font-size: 14px; }
     .cell-pallet { display: none; }
@@ -485,6 +496,7 @@
       </div>
     </div>
 
+    <!-- 01~09 列數篩選群組 -->
     <div id="mapFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterMap('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="01" onclick="filterMap('01')">01</button>
@@ -497,6 +509,9 @@
       <button class="filter-btn-compact" data-filter="08" onclick="filterMap('08')">08</button>
       <button class="filter-btn-compact" data-filter="09" onclick="filterMap('09')">09</button>
     </div>
+
+    <!-- 🌟 新增：BATCH 動態篩選按鈕容器 -->
+    <div id="mapBatchFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;"></div>
 
     <div class="compact-table-wrapper"><div id="mapTableContainer"></div></div>
   </div>
@@ -577,7 +592,6 @@
         if (!response.ok) throw new Error("Firebase fetch failed");
         const rawData = await response.json();
         cachedData = decodeFirebaseKeys(rawData) || {};
-        console.log("[Edge Cache] Data successfully loaded and decoded!");
         return cachedData;
       } catch (error) {
         console.error("Cache load error:", error);
@@ -687,7 +701,6 @@
           setTimeout(() => runner[prop](...args), 0);
           return runner;
         } else {
-          console.error(`[Edge Cache] Unimplemented GAS method: ${prop}`);
           return runner;
         }
       };
@@ -991,12 +1004,44 @@
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg('listMsgArea', loadTimer); fetchAndUpdateSyncTime('UpInventory', 'lastRefreshedTime');
       document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0; document.getElementById('listSummaryBox').style.display = "flex";
+      
       let h = `<table class="compact-table"><thead><tr>`; (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
+      
+      let prevColValues = {}; 
+      
       (res.data||[]).forEach(i => {
         h+=`<tr>`; res.columns.forEach(c => { 
           let val = i[c] !== undefined ? i[c] : ""; let displayHtml = val; let upperC = c ? c.toString().toUpperCase() : "";
-          if (upperC.includes("LOC")) displayHtml = formatLocationStr(val); else if (upperC.includes("PALLET") || upperC.includes("PL")) displayHtml = formatPalletStr(val);
-          else if (upperC.includes("QTY") || upperC.includes("SUM")) { let num = parseFloat(val); if (!isNaN(num)) { let numStr = String(num); if (numStr.length >= 3) displayHtml = `<span style="color:var(--status-red); font-weight:700; font-size:14px;">${val}</span>`; else if (numStr.length === 2) displayHtml = `<span style="color:var(--status-yellow); font-weight:700;">${val}</span>`; else displayHtml = `<span style="color:var(--text-main); font-weight:700;">${val}</span>`; } else displayHtml = `<span style="color:var(--accent-cyan); font-weight:700;">${val}</span>`; }
+          
+          if (upperC.includes("LOC")) {
+              let curr = String(val).trim();
+              if (curr !== "" && curr === prevColValues[c]) {
+                  displayHtml = `<span style="color: rgba(255,255,255,0.15); font-weight: normal;">${curr}</span>`;
+              } else { 
+                  displayHtml = formatLocationStr(val); 
+                  prevColValues[c] = curr; 
+              }
+          } 
+          else if (upperC.includes("PALLET") || upperC.includes("PL")) {
+              let curr = String(val).trim();
+              if (curr !== "" && curr !== "-" && curr === prevColValues[c]) {
+                  displayHtml = `<span style="color: rgba(255,255,255,0.15); font-weight: normal;">${curr}</span>`;
+              } else {
+                  displayHtml = formatPalletStr(val);
+                  prevColValues[c] = curr;
+              }
+          }
+          else if (upperC.includes("QTY") || upperC.includes("SUM")) { 
+              let num = parseFloat(val); 
+              if (!isNaN(num)) { 
+                  let numStr = String(num); 
+                  if (numStr.length >= 3) displayHtml = `<span style="color:var(--status-red); font-weight:700; font-size:14px;">${val}</span>`; 
+                  else if (numStr.length === 2) displayHtml = `<span style="color:var(--status-yellow); font-weight:700;">${val}</span>`; 
+                  else displayHtml = `<span style="color:var(--text-main); font-weight:700;">${val}</span>`; 
+              } else { 
+                  displayHtml = `<span style="color:var(--accent-cyan); font-weight:700;">${val}</span>`; 
+              } 
+          }
           h+=`<td>${displayHtml}</td>`; 
         }); h+=`</tr>`;
       }); h+=`</tbody></table>`; document.getElementById('listTableContainer').innerHTML = h;
@@ -1106,8 +1151,6 @@
 
   function showPalletModal(locStr, encodedPallets) {
     document.getElementById('palletModalOverlay').style.display = 'flex';
-    
-    // 重新組合字串：08街- 29列 - 3/F
     let parts = String(locStr).split(' - ');
     let displayLoc = locStr;
     if (parts.length === 3) {
@@ -1129,8 +1172,6 @@
       pallets.forEach((p, idx) => {
         let pStr = String(p).trim();
         let pDisplay = pStr;
-        
-        // 獨立調整 Modal 內的棧板字體大小
         if (pStr !== "-" && pStr.length > 5) {
             let prefix = pStr.substring(0, pStr.length - 5);
             let suffix = pStr.substring(pStr.length - 5);
@@ -1155,6 +1196,12 @@
     document.getElementById('palletModalOverlay').style.display = 'none';
   }
 
+  // 🌟 MAP 資料暫存與 BATCH 動態過濾狀態
+  let globalAlData = [];
+  let globalMapGrid = [];
+  let activeMapBatchFilter = 'ALL';
+  const activeMapFilters = new Set();
+
   function loadMapData() {
     let timer = startLoadingMsg('mapMsgArea', 'MAP LAYOUT');
 
@@ -1170,102 +1217,198 @@
     }).getDbData();
 
     window.google.script.run.withSuccessHandler((alRes) => {
-      const restockLocs = new Map();
-      let parsedCount = 0;
-      
-      if (alRes && alRes.data) {
-        alRes.data.forEach(item => {
-          let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
-          let loc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
-          let palletKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase().includes("PL"));
-          let pallet = palletKey ? String(item[palletKey] || "").trim() : "-";
-
-          if (loc.length >= 9) {
-            let grp = parseInt(loc.substring(0, 2), 10); 
-            let bay = parseInt(loc.substring(5, 7), 10); 
-            let lvl = parseInt(loc.substring(7, 9), 10);
-            if (!isNaN(grp) && !isNaN(bay) && !isNaN(lvl)) { 
-              let key = `${grp}-${bay}-${lvl}`;
-              if (!restockLocs.has(key)) restockLocs.set(key, new Set());
-              if (pallet !== "" && pallet !== "-") restockLocs.get(key).add(pallet);
-              parsedCount++; 
-            }
-          }
-        });
-      }
+      globalAlData = alRes && alRes.data ? alRes.data : [];
 
       window.google.script.run.withSuccessHandler((res) => {
-        stopLoadingMsg('mapMsgArea', timer); fetchAndUpdateSyncTime('UpInventory', 'lastMapRefreshedTime');
-        let msgEl = document.getElementById('mapMsgArea');
-        if (msgEl) {
-            msgEl.innerHTML = parsedCount > 0 ? `<span style="color:var(--status-green); font-size: 11px;">聯動補貨座標: ${parsedCount} 筆</span>` : `<span style="color:var(--status-yellow); font-size: 11px;">未偵測到補貨任務或座標格式不符</span>`;
-            msgEl.style.display = 'block';
+        stopLoadingMsg('mapMsgArea', timer); 
+        fetchAndUpdateSyncTime('UpInventory', 'lastMapRefreshedTime');
+        
+        globalMapGrid = res && res.grid ? res.grid : [];
+        if (!globalMapGrid || globalMapGrid.length === 0) { 
+          let msgEl = document.getElementById('mapMsgArea');
+          if (msgEl) msgEl.textContent = "NO MAP DATA FOUND"; 
+          return; 
         }
 
-        let r = res || { grid: [], rowCount: 0 };
-        if (!r.grid || r.grid.length === 0) { if(msgEl) msgEl.textContent = "NO MAP DATA FOUND"; return; }
-        const grid = r.grid; document.getElementById('mapSummaryBox').style.display = "flex"; document.getElementById('mapFilterGroup').style.display = "flex"; 
+        // 🌟 自動解析所有獨立的 BATCH 並生成篩選按鈕
+        const batches = new Set();
+        let lastValidBatchMem = "";
+        globalAlData.forEach(item => {
+           let batchKey = Object.keys(item).find(k => String(k).toUpperCase() === "BATCH");
+           let rawBatch = batchKey ? String(item[batchKey] || "").trim().toUpperCase() : "";
+           if (rawBatch !== "") { lastValidBatchMem = rawBatch; }
+           if (lastValidBatchMem !== "" && lastValidBatchMem !== "-") { batches.add(lastValidBatchMem); }
+        });
+        
+        let bHtml = `<button class="filter-btn-compact active" data-batch="ALL" onclick="filterMapByBatch('ALL')">ALL BATCH</button>`;
+        Array.from(batches).sort().forEach(b => {
+           bHtml += `<button class="filter-btn-compact" data-batch="${b}" onclick="filterMapByBatch('${b}')" style="color:var(--status-yellow); border-color:var(--border-light);">${b}</button>`;
+        });
+        document.getElementById('mapBatchFilterGroup').innerHTML = bHtml;
 
-        let h = `<table class="compact-table map-table">`; let currentRowGroup = 0; let currentRowGroupStr = "HEADER"; const headerBays = [];
-
-        grid.forEach((row, rIdx) => {
-          let colA = String(row[0]).trim(); if (rIdx > 0 && colA !== "") { currentRowGroupStr = colA; currentRowGroup = parseInt(colA, 10); }
-          let colB = String(row[1]).trim(); let trClass = rIdx > 0 ? `map-data-row group-${currentRowGroupStr}` : ""; if (colB === "1") { trClass += " map-row-separator"; }
-
-          h += `<tr class="${trClass}">`;
-          row.forEach((cell, cIdx) => {
-            let valStr = String(cell).trim(); let cellClass = ""; let tag = (rIdx === 0 || cIdx === 0) ? "th" : "td";
-            if (rIdx === 0 && cIdx >= 2) { headerBays[cIdx] = parseInt(valStr, 10); }
-            if (rIdx > 0 && cIdx === 1) { if (valStr === "3") cellClass = "lvl-3"; else if (valStr === "2") cellClass = "lvl-2"; else if (valStr === "1") cellClass = "lvl-1"; }
-            
-            if (rIdx === 0 || cIdx === 0 || cIdx === 1) { 
-              h += `<${tag} class="${cellClass}">${valStr}</${tag}>`; 
-            } 
-            else {
-              let num = parseFloat(valStr); let bay = headerBays[cIdx]; let lvl = parseInt(colB, 10);
-              let targetKey = `${currentRowGroup}-${bay}-${lvl}`;
-              let isRestockTarget = restockLocs.has(targetKey);
-              let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
-
-              if (isNaN(num) || num === 0 || valStr === "") { 
-                valStr = "."; 
-                cellClass = isRestockTarget ? "map-restock-target" : "map-zero"; 
-              } else { 
-                cellClass = isRestockTarget ? "map-restock-target" : "map-normal"; 
-              }
-              
-              let innerHTML = `<span class="cell-qty">${valStr}</span>`;
-              let clickAttr = "";
-
-              if (isRestockTarget) {
-                innerHTML += `<span class="cell-pallet">${palletCount}</span>`;
-                // 將棧板資料轉為 JSON 供點擊事件讀取
-                let palletArr = Array.from(restockLocs.get(targetKey));
-                let encodedData = encodeURIComponent(JSON.stringify(palletArr));
-                let displayLoc = `${currentRowGroupStr} - ${String(bay).padStart(2, '0')} - ${lvl}`;
-                
-                // 綁定點擊事件並加上手指游標
-                clickAttr = `onclick="showPalletModal('${displayLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看棧板清單"`;
-              } else {
-                innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
-              }
-
-              h += `<td class="${cellClass}" ${clickAttr}>${innerHTML}</td>`;
-            }
-          }); h += `</tr>`;
-        }); h += `</table>`;
-        document.getElementById('mapTableContainer').innerHTML = h; filterMap('ALL');
+        document.getElementById('mapSummaryBox').style.display = "flex"; 
+        document.getElementById('mapFilterGroup').style.display = "flex"; 
+        document.getElementById('mapBatchFilterGroup').style.display = "flex"; 
+        
+        activeMapBatchFilter = 'ALL';
+        renderMapTableCore(); 
       }).withFailureHandler(e => { stopLoadingMsg('mapMsgArea', timer); document.getElementById('mapMsgArea').textContent = "ERROR: " + e.message; }).getMapData();
     }).withFailureHandler(e => { stopLoadingMsg('mapMsgArea', timer); document.getElementById('mapMsgArea').textContent = "ERROR fetching Restock: " + e.message; }).getAlQtyList();
   }
 
-  const activeMapFilters = new Set();
+  // 🌟 BATCH 按鈕點擊切換事件
+  function filterMapByBatch(batch) {
+     activeMapBatchFilter = batch;
+     document.querySelectorAll('#mapBatchFilterGroup .filter-btn-compact').forEach(btn => {
+         if (btn.getAttribute('data-batch') === batch) {
+            btn.classList.add('active');
+            btn.style.borderColor = 'var(--status-yellow)';
+         } else {
+            btn.classList.remove('active');
+            btn.style.borderColor = 'var(--border-light)';
+         }
+     });
+     renderMapTableCore(); 
+  }
+
+  // 🌟 核心地圖渲染引擎 (支援 BATCH 過濾與 LOC 向下繼承)
+  function renderMapTableCore() {
+      const restockLocs = new Map();
+      let parsedCount = 0;
+      let lastValidLoc = "";
+      let lastValidBatch = "";
+
+      globalAlData.forEach(item => {
+        let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
+        let rawLoc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
+        if (rawLoc !== "") { lastValidLoc = rawLoc; }
+        let loc = lastValidLoc;
+
+        let batchKey = Object.keys(item).find(k => String(k).toUpperCase() === "BATCH");
+        let rawBatch = batchKey ? String(item[batchKey] || "").trim().toUpperCase() : "";
+        if (rawBatch !== "") { lastValidBatch = rawBatch; }
+        let batch = lastValidBatch;
+
+        if (activeMapBatchFilter !== 'ALL' && batch !== activeMapBatchFilter) return;
+
+        let palletKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase().includes("PL"));
+        let pallet = palletKey ? String(item[palletKey] || "").trim() : "-";
+
+        if (loc.length >= 9) {
+          let grp = parseInt(loc.substring(0, 2), 10); 
+          let bay = parseInt(loc.substring(5, 7), 10); 
+          let lvl = parseInt(loc.substring(7, 9), 10);
+          if (!isNaN(grp) && !isNaN(bay) && !isNaN(lvl)) { 
+            let key = `${grp}-${bay}-${lvl}`;
+            if (!restockLocs.has(key)) restockLocs.set(key, new Set());
+            if (pallet !== "" && pallet !== "-") restockLocs.get(key).add(pallet);
+            parsedCount++; 
+          }
+        }
+      });
+
+      let msgEl = document.getElementById('mapMsgArea');
+      if (msgEl) {
+          if (activeMapBatchFilter === 'ALL') {
+              msgEl.innerHTML = parsedCount > 0 ? `<span style="color:var(--status-green); font-size: 11px;">聯動補貨座標: ${parsedCount} 筆</span>` : `<span style="color:var(--status-yellow); font-size: 11px;">暫無補貨任務</span>`;
+          } else {
+              msgEl.innerHTML = parsedCount > 0 ? `<span style="color:var(--status-yellow); font-size: 11px; font-weight:bold;">[${activeMapBatchFilter}] 專屬任務: ${parsedCount} 筆</span>` : `<span style="color:var(--text-muted); font-size: 11px;">該 BATCH 暫無補貨任務</span>`;
+          }
+          msgEl.style.display = 'block';
+      }
+
+      let h = `<table class="compact-table map-table">`; 
+      let currentRowGroup = 0; 
+      let currentRowGroupStr = "HEADER"; 
+      const headerBays = [];
+
+      globalMapGrid.forEach((row, rIdx) => {
+        let colA = String(row[0]).trim(); 
+        if (rIdx > 0 && colA !== "") { currentRowGroupStr = colA; currentRowGroup = parseInt(colA, 10); }
+        let colB = String(row[1]).trim(); 
+        let trClass = rIdx > 0 ? `map-data-row group-${currentRowGroupStr}` : ""; 
+        if (colB === "1") { trClass += " map-row-separator"; }
+
+        h += `<tr class="${trClass}">`;
+        row.forEach((cell, cIdx) => {
+          let valStr = String(cell).trim(); let cellClass = ""; let tag = (rIdx === 0 || cIdx === 0) ? "th" : "td";
+          if (rIdx === 0 && cIdx >= 2) { headerBays[cIdx] = parseInt(valStr, 10); }
+          if (rIdx > 0 && cIdx === 1) { if (valStr === "3") cellClass = "lvl-3"; else if (valStr === "2") cellClass = "lvl-2"; else if (valStr === "1") cellClass = "lvl-1"; }
+          
+          if (rIdx === 0 || cIdx === 0 || cIdx === 1) { 
+            h += `<${tag} class="${cellClass}">${valStr}</${tag}>`; 
+          } 
+          else {
+            let num = parseFloat(valStr); let bay = headerBays[cIdx]; let lvl = parseInt(colB, 10);
+            let targetKey = `${currentRowGroup}-${bay}-${lvl}`;
+            let isRestockTarget = restockLocs.has(targetKey);
+            let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
+
+            if (isNaN(num) || num === 0 || valStr === "") { 
+              valStr = "."; 
+              cellClass = isRestockTarget ? "map-restock-target" : "map-zero"; 
+            } else { 
+              cellClass = isRestockTarget ? "map-restock-target" : "map-normal"; 
+            }
+            
+            let innerHTML = `<span class="cell-qty">${valStr}</span>`;
+            let clickAttr = "";
+
+            if (isRestockTarget) {
+              innerHTML += `<span class="cell-pallet">${palletCount}</span>`;
+              let palletArr = Array.from(restockLocs.get(targetKey));
+              let encodedData = encodeURIComponent(JSON.stringify(palletArr));
+              let displayLoc = `${currentRowGroupStr} - ${String(bay).padStart(2, '0')} - ${lvl}`;
+              clickAttr = `onclick="showPalletModal('${displayLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看補貨清單"`;
+            } else {
+              innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
+            }
+            h += `<td class="${cellClass}" ${clickAttr}>${innerHTML}</td>`;
+          }
+        }); h += `</tr>`;
+      }); h += `</table>`;
+      
+      document.getElementById('mapTableContainer').innerHTML = h; 
+      applyMapRowGroupFilter(); 
+  }
+
+  // 🌟 行數 (01~09) 篩選聯動
+  function applyMapRowGroupFilter() {
+      const rows = document.querySelectorAll('.map-data-row');
+      rows.forEach(r => { 
+          let rowGroup = null; 
+          for (let i = 1; i <= 9; i++) { 
+              let g = "0" + i; 
+              if (r.classList.contains(`group-${g}`)) { rowGroup = g; break; } 
+          } 
+          if (activeMapFilters.size === 0) { 
+              r.style.display = ''; 
+          } else { 
+              if (rowGroup && activeMapFilters.has(rowGroup)) { r.style.display = ''; } 
+              else { r.style.display = 'none'; } 
+          } 
+      });
+  }
+
   function filterMap(group) {
-    const allBtn = document.querySelector('#mapFilterGroup .filter-btn-compact[data-filter="ALL"]');
-    if (group === 'ALL') { activeMapFilters.clear(); document.querySelectorAll('#mapFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active')); allBtn.classList.add('active'); } 
-    else { const targetBtn = document.querySelector(`#mapFilterGroup .filter-btn-compact[data-filter="${group}"]`); if (activeMapFilters.has(group)) { activeMapFilters.delete(group); targetBtn.classList.remove('active'); } else { activeMapFilters.add(group); targetBtn.classList.add('active'); } if (activeMapFilters.size === 0) { allBtn.classList.add('active'); } else { allBtn.classList.remove('active'); } }
-    const rows = document.querySelectorAll('.map-data-row');
-    rows.forEach(r => { let rowGroup = null; for (let i = 1; i <= 9; i++) { let g = "0" + i; if (r.classList.contains(`group-${g}`)) { rowGroup = g; break; } } if (activeMapFilters.size === 0) { r.style.display = ''; } else { if (rowGroup && activeMapFilters.has(rowGroup)) { r.style.display = ''; } else { r.style.display = 'none'; } } });
+      const allBtn = document.querySelector('#mapFilterGroup .filter-btn-compact[data-filter="ALL"]');
+      if (group === 'ALL') { 
+          activeMapFilters.clear(); 
+          document.querySelectorAll('#mapFilterGroup .filter-btn-compact').forEach(btn => btn.classList.remove('active')); 
+          allBtn.classList.add('active'); 
+      } else { 
+          const targetBtn = document.querySelector(`#mapFilterGroup .filter-btn-compact[data-filter="${group}"]`); 
+          if (activeMapFilters.has(group)) { 
+              activeMapFilters.delete(group); 
+              targetBtn.classList.remove('active'); 
+          } else { 
+              activeMapFilters.add(group); 
+              targetBtn.classList.add('active'); 
+          } 
+          if (activeMapFilters.size === 0) { allBtn.classList.add('active'); } 
+          else { allBtn.classList.remove('active'); } 
+      }
+      applyMapRowGroupFilter();
   }
 
   function loadLoadplanData() {
@@ -1302,7 +1445,7 @@
           formattedStr = formattedStr.replace(/\b(GOH)\b/gi, '<span style="color:#d946ef; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/\b(FTW)\b/gi, '<span style="color:#ff8c00; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/\b(ACC)\b/gi, '<span style="color:#ff003c; font-weight:700;">$1</span>');
-          formattedStr = formattedStr.replace(/\b(BDW)\b/gi, '<span style="color:#86efac; font-weight:700;">$1</span>');
+          formattedStr = formattedStr.replace(/\b(BDW)\b/gi, './<span style="color:#86efac; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/\b(SI)\b/gi, '<span style="color:#fde047; font-weight:700;">$1</span>');
           formattedStr = formattedStr.replace(/(ctns|pcs|cbm)/gi, '<span style="color:var(--accent-cyan);">$&</span>');
           formattedStr = formattedStr.replace(/\b(SS|FW)/gi, '<span style="color:#fb7185; font-weight:700;">$1</span>');
