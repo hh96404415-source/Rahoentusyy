@@ -115,11 +115,6 @@
     .icon-btn i { font-size: 18px; }
     .icon-btn:hover { background: var(--bg-hover); }
 
-    .btn-camera { color: #fff; background: var(--accent-blue); border-color: var(--accent-blue); }
-    .btn-undo { color: var(--status-yellow); border-color: rgba(251, 191, 36, 0.3); }
-    .btn-reset { color: var(--status-red); border-color: rgba(251, 113, 133, 0.3); }
-    .btn-sync { color: var(--status-green); border-color: rgba(52, 211, 153, 0.3); }
-
     .summary-box-compact {
       display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center;
       gap: 4px; margin-bottom: 4px; padding: 4px 6px; 
@@ -177,9 +172,13 @@
     .compact-table tr:nth-child(even) td { background-color: rgba(255,255,255,0.02); }
     .compact-table tr:hover td { background-color: rgba(56, 189, 248, 0.05); }
 
-    #listView .compact-table, #gohView .compact-table { font-size: 16px !important; }
-    #listView .compact-table th, #gohView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
-    #listView .compact-table td, #gohView .compact-table td { padding: 8px 10px; }
+    #listView .compact-table { font-size: 16px !important; }
+    #listView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
+    #listView .compact-table td { padding: 8px 10px; }
+    
+    #gohView .compact-table { font-size: 16px !important; }
+    #gohView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
+    #gohView .compact-table td { padding: 8px 10px; }
 
     .map-table th, .map-table td {
       min-width: 24px; height: 24px; padding: 1px; font-size: 13px; text-align: center;
@@ -201,7 +200,7 @@
     }
 
     .compact-table.map-table td.map-zero { color: rgba(255, 255, 255, 0.15) !important; font-weight: normal !important; }
-    .compact-table.map-table td.map-normal { color: #f8fafc !important; }
+    .compact-table.map-table td.map-normal { color: #f8fafc !important; font-weight: 900 !important; }
 
     .compact-table.map-table td.map-restock-target { 
       background-color: rgba(56, 189, 248, 0.25) !important; 
@@ -263,25 +262,26 @@
     .show-pallets .cell-pallet { display: inline-block !important; font-weight: 900; color: #fde047; text-shadow: 0 0 5px rgba(253, 224, 71, 0.8); font-size: 14px; }
     .cell-pallet { display: none; }
 
+    /* D-Pad 縮小優化 (15%) */
     .d-pad-container {
         display: grid; 
         grid-template-areas: 
             ". up ."
             "left down right";
-        gap: 6px; 
+        gap: 3px; 
         background: rgba(0,0,0,0.4); 
-        padding: 8px; 
-        border-radius: 12px; 
+        padding: 4px; 
+        border-radius: 10px; 
         border: 1px solid var(--border-light); 
         justify-content: center; 
         align-content: center;
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
     }
     .d-pad-btn {
-        width: 32px; height: 32px;
+        width: 32px; height: 32px; 
         background: var(--bg-hover); 
         border: 1px solid rgba(255,255,255,0.1); 
-        border-radius: 8px;
+        border-radius: 6px;
         color: var(--text-main);
         display: flex; justify-content: center; align-items: center;
         cursor: pointer;
@@ -294,7 +294,7 @@
         background: var(--accent-cyan);
         color: var(--bg-deep);
     }
-    .d-pad-btn i { font-size: 16px; font-weight: bold; }
+    .d-pad-btn i { font-size: 14px; font-weight: bold; } 
     
     .btn-up { grid-area: up; }
     .btn-left { grid-area: left; }
@@ -316,7 +316,7 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <div id="devGodModeBtn" style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; cursor: default; z-index: 10;" onclick="handleGodModeTap(event)" ontouchend="handleGodModeTap(event)"></div>
+    <div id="devGodModeBtn" style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; cursor: default; z-index: 10;" ondblclick="activateGodMode()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -331,6 +331,27 @@
     <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 16px; font-family: 'Roboto Mono', monospace;">System Access Portal</div>
     <div id="sysQrCodeContainer" style="background: #fff; padding: 12px; border-radius: 8px; display: inline-block;"></div>
     <button class="primary-btn" style="width: 100%; margin-top: 16px;" onclick="closeSystemQrCode()">CLOSE</button>
+  </div>
+</div>
+
+<!-- REC QR Modal -->
+<div id="recQrModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeRecQrModal(event)">
+  <div class="glass-box" style="border-color: var(--accent-blue); max-width: 340px; display:flex; flex-direction:column; gap:12px; padding: 16px;" onclick="event.stopPropagation();">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+        <div class="d-pad-btn" style="width:36px; height:36px;" onclick="navigateRecQrModal('up')" title="上一筆"><i class="ph ph-caret-up"></i></div>
+        <div style="text-align:center; flex:1; overflow:hidden;">
+            <div id="recQrModalTitle" style="color:var(--accent-cyan); font-weight:700; font-size:16px; font-family:'Roboto Mono'; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">SO_TITLE</div>
+            <div id="recQrModalSubtitle" style="color:var(--text-muted); font-size:11px; font-family:'Roboto Mono';">RECID</div>
+        </div>
+        <div class="d-pad-btn" style="width:36px; height:36px;" onclick="navigateRecQrModal('down')" title="下一筆"><i class="ph ph-caret-down"></i></div>
+    </div>
+    
+    <div style="background: #fff; padding: 12px; border-radius: 8px; align-self: center; display: inline-block;">
+        <div id="recQrCodeContainer"></div>
+    </div>
+    
+    <button class="primary-btn" style="width: 100%; padding:10px;" onclick="closeRecQrModal()">CLOSE</button>
   </div>
 </div>
 
@@ -362,7 +383,7 @@
 </div>
 
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
-  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column; padding: 16px;" onclick="event.stopPropagation();">
+  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column; padding: 14px;" onclick="event.stopPropagation();">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
       
@@ -497,7 +518,7 @@
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
   </div>
 
-  <!-- GAO View -->
+  <!-- Gao (DI) View -->
   <div id="gaoView" class="view-section" style="display: none;">
     <div id="gaoMsgArea" class="message"></div>
     
@@ -616,7 +637,7 @@
     <div class="compact-table-wrapper"><div id="uphTableContainer"></div></div>
   </div>
 
-  <!-- GOH 掛衣區 View -->
+  <!-- GOH View -->
   <div id="gohView" class="view-section" style="display: none;">
     <div id="gohMsgArea" class="message"></div>
     <div class="summary-box-compact" id="gohSummaryBox" style="display: none;">
@@ -626,7 +647,6 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadGohDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-    <!-- 篩選鍵容器 (已在 JS 中改為 Grid 排版) -->
     <div id="gohFilterGroup" style="display: none; margin-bottom: 8px;"></div>
     <div class="compact-table-wrapper"><div id="gohTableContainer"></div></div>
   </div>
@@ -724,8 +744,8 @@
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
         let authList = []; let authHeaders = [];
-        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB", "GOH"]; } 
-        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || []; }
+        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "GOH", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
+        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
 
         const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
@@ -867,22 +887,9 @@
     if (el) { el.innerHTML = ""; el.style.color = "var(--status-red)"; }
   }
 
-  let lastGodModeTap = 0;
-  function handleGodModeTap(e) {
-    if (e && e.type === 'touchend') e.preventDefault();
-    const now = Date.now();
-    if (now - lastGodModeTap < 400 && (now - lastGodModeTap > 50)) { activateGodMode(); lastGodModeTap = 0; } 
-    else { lastGodModeTap = now; }
-  }
-
   function activateGodMode() {
-    const godModePayload = { 
-        success: true, 
-        name: "Dev Admin", 
-        permissions: ["rec", "gao", "lp", "uph", "list", "map", "orderStatus", "search", "audit", "db", "goh"] 
-    };
-    sessionStorage.setItem('wms_auth', JSON.stringify(godModePayload)); 
-    applyPermissions(godModePayload);
+    const orderedPerms = ['rec', 'gao', 'lp', 'goh', 'uph', 'list', 'map', 'orderStatus', 'search', 'audit', 'db'];
+    applyPermissions({ success: true, name: "Dev Admin", permissions: orderedPerms });
   }
 
   window.onload = function() {
@@ -1126,9 +1133,30 @@
     let loadTimer = startLoadingMsg('listMsgArea', 'LIST');
     window.google.script.run.withSuccessHandler((res) => {
       stopLoadingMsg('listMsgArea', loadTimer); fetchAndUpdateSyncTime('UpInventory', 'lastRefreshedTime');
-      document.getElementById('totListLocs').textContent = res.locsCount||0; document.getElementById('totListRows').textContent = res.plCount||0; document.getElementById('totListAlQty').textContent = res.totalAlQty||0; document.getElementById('listSummaryBox').style.display = "flex";
       
-      let h = `<table class="compact-table" id="restockTable"><thead><tr>`; (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr></thead><tbody>`;
+      let dynamicLocs = new Set();
+      let dynamicPl = new Set();
+      let dynamicQty = 0;
+      
+      (res.data||[]).forEach(i => {
+         let locKey = Object.keys(i).find(k => String(k).toUpperCase().includes("LOC"));
+         if(locKey && i[locKey] && i[locKey] !== "-") dynamicLocs.add(String(i[locKey]).trim());
+         
+         let plKey = Object.keys(i).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase() === "PL" || String(k).toUpperCase() === "PALLET_ID");
+         if(plKey && i[plKey] && i[plKey] !== "-") dynamicPl.add(String(i[plKey]).trim());
+         
+         let qtyKey = Object.keys(i).find(k => String(k).toUpperCase().includes("QTY"));
+         if(qtyKey && i[qtyKey]) dynamicQty += (parseFloat(i[qtyKey])||0);
+      });
+      
+      document.getElementById('totListLocs').textContent = dynamicLocs.size; 
+      document.getElementById('totListRows').textContent = dynamicPl.size; 
+      document.getElementById('totListAlQty').textContent = dynamicQty; 
+      document.getElementById('listSummaryBox').style.display = "flex";
+      
+      let h = `<table class="compact-table" id="restockTable"><thead><tr>`; 
+      (res.columns||[]).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); 
+      h+=`</tr></thead><tbody>`;
       
       let prevColValues = {}; 
       
@@ -1251,12 +1279,97 @@
     }).getDbData();
   }
 
+  let globalRecListForQr = [];
+  let currentRecQrIdx = 0;
+  let recQrCodeObj = null;
+
   function renderRecData(res) {
     let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
-    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => { if (c && String(c).toUpperCase().includes("UPD/")) { h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`; } else { h += `<th>${c}</th>`; } }); h+=`</tr></thead><tbody>`;
-    (res.data||[]).forEach(i => { let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : ""; let specialStyle = ""; if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;"; else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;"; else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;"; else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;"; h+=`<tr>`; (res.headers || []).forEach(c => { let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; let inlineStyle = ""; if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); } else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-" + v; } if (c === soKey && specialStyle !== "") inlineStyle = specialStyle; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}" style="${inlineStyle}">${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`;
-    document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); document.getElementById('recSummaryBox').style.display = "flex"; document.getElementById('recTableContainer').innerHTML = h;
+    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT"); 
+    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "SO" || h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
+    let recidKey = (res.headers || []).find(h => h.toUpperCase().trim() === "RECID" || h.toUpperCase().trim() === "RECEIPT_ID" || h.toUpperCase().trim() === "RECEIPT");
+    
+    globalRecListForQr = []; 
+
+    let h = `<table class="compact-table"><thead><tr>`; 
+    (res.headers || []).forEach(c => { 
+        if (c && String(c).toUpperCase().includes("UPD/")) { 
+            h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`; 
+        } else { 
+            h += `<th>${c}</th>`; 
+        } 
+    }); 
+    h+=`</tr></thead><tbody>`;
+    
+    (res.data||[]).forEach((i, rowIdx) => { 
+        let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : ""; 
+        let specialStyle = ""; 
+        if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;"; 
+        else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;"; 
+        else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;"; 
+        else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;"; 
+        
+        let soVal = soKey ? String(i[soKey] || "").trim() : "";
+        let recidVal = recidKey ? String(i[recidKey] || "").trim() : "";
+        globalRecListForQr.push({ so: soVal, recid: recidVal });
+        let currentRowIdx = globalRecListForQr.length - 1;
+
+        h+=`<tr>`; 
+        (res.headers || []).forEach(c => { 
+            let v = i[c] !== undefined ? i[c] : ""; 
+            const cln = c ? c.toString().trim().toUpperCase() : ""; 
+            let cls = ""; let inlineStyle = ""; 
+            
+            if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); } 
+            else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-" + v; } 
+            if (c === soKey && specialStyle !== "") inlineStyle = specialStyle; 
+            if (v === 0 || String(v).trim() === "0") v = ""; 
+            
+            let displayV = v;
+            if (c === soKey && v !== "" && v !== "-") {
+                displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+            }
+            
+            h+=`<td class="${cls}" style="${inlineStyle}">${displayV}</td>`; 
+        }); 
+        h+=`</tr>`; 
+    }); 
+    h+=`</tbody></table>`;
+    
+    document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); 
+    document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); 
+    document.getElementById('recSummaryBox').style.display = "flex"; 
+    document.getElementById('recTableContainer').innerHTML = h;
+  }
+
+  function openRecQrModal(idx) {
+      if (idx < 0 || idx >= globalRecListForQr.length) return;
+      currentRecQrIdx = idx;
+      const item = globalRecListForQr[idx];
+      
+      document.getElementById('recQrModalTitle').textContent = item.so || "NO S/O";
+      document.getElementById('recQrModalSubtitle').textContent = item.recid || "NO RECID";
+      
+      document.getElementById('recQrModalOverlay').style.display = 'flex';
+      
+      const container = document.getElementById('recQrCodeContainer');
+      container.innerHTML = '';
+      
+      let targetText = item.recid || item.so || "NO_DATA";
+      new QRCode(container, { text: targetText, width: 180, height: 180, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+  }
+  
+  function closeRecQrModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('recQrModalOverlay').style.display = 'none';
+  }
+  
+  function navigateRecQrModal(dir) {
+      if (dir === 'up') {
+          if (currentRecQrIdx > 0) openRecQrModal(currentRecQrIdx - 1);
+      } else if (dir === 'down') {
+          if (currentRecQrIdx < globalRecListForQr.length - 1) openRecQrModal(currentRecQrIdx + 1);
+      }
   }
 
   function loadDbDataList() {
@@ -1808,18 +1921,35 @@
         return /T\d+/.test(loc) && loc !== "TRANST001";
       });
 
-      const uniqueLocs = Array.from(new Set(globalGohData.map(i => String(i.LOCATION_ID || "").toUpperCase()))).sort();
+      const locQtyMap = new Map();
+      let totalGohQty = 0;
+      globalGohData.forEach(item => {
+          const loc = String(item.LOCATION_ID || "").toUpperCase();
+          
+          let qty = 0;
+          Object.keys(item).forEach(k => {
+              let kl = k.toUpperCase();
+              if(kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(item[k]) || 0;
+          });
+          
+          totalGohQty += qty;
+          if (!locQtyMap.has(loc)) locQtyMap.set(loc, 0);
+          locQtyMap.set(loc, locQtyMap.get(loc) + qty);
+      });
+
+      const uniqueLocs = Array.from(locQtyMap.keys()).sort();
       
       const filterGroup = document.getElementById('gohFilterGroup');
-      
-      // 改用 CSS Grid 實現統一大小且自動換行的精美按鈕矩陣
       filterGroup.style.display = "grid";
       filterGroup.style.gridTemplateColumns = "repeat(auto-fill, minmax(75px, 1fr))";
-      filterGroup.style.gap = "6px";
+      filterGroup.style.gap = "4px";
+      filterGroup.style.marginBottom = "8px";
 
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 8px 4px; font-size: 14px !important; justify-content: center; text-align: center;">ALL</button>`;
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px; font-size: 13px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:11px;">(${totalGohQty})</span></button>`;
+      
       uniqueLocs.forEach(loc => {
-          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 8px 4px; font-size: 14px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light);">${loc}</button>`;
+          let locQty = locQtyMap.get(loc);
+          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px; font-size: 13px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:11px;">(${locQty})</span></button>`;
       });
       filterGroup.innerHTML = fHtml;
 
@@ -1850,22 +1980,37 @@
       let totRows = 0;
       let totQty = 0;
 
-      // 更新欄位順序
       let h = `<table class="compact-table"><thead><tr>
-        <th>LOC</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>Size</th><th>SKU</th><th>RECEIPT</th>
+        <th>LOC</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>SKU</th><th>RECEIPT</th>
       </tr></thead><tbody>`;
 
       globalGohData.forEach(i => {
         let loc = String(i["LOCATION_ID"] || "").toUpperCase();
         if (activeGohFilter !== 'ALL' && loc !== activeGohFilter) return;
 
-        let receipt = i["RECEIPT_ID"] || i["Receipt Dstamp"] || "";
         let tag = i["TAG_ID"] || "";
         let sku = i["SKU_ID"] || "";
-        let size = i["SKU Size"] || i["Size"] || "";
-        let barcode = i["SUPPLIER_SKU_ID"] || "";
         let coo = i["User Def Type 1"] || "";
-        let qty = parseFloat(i["QTY_ON_HAND"]) || 0;
+        
+        let receipt = "";
+        let size = "";
+        let barcode = "";
+        let qty = 0;
+        
+        // 先尋找 RECEIPT_ID (絕對優先權)
+        Object.keys(i).forEach(k => {
+            let kl = k.toUpperCase();
+            if (kl === "RECEIPT_ID") { receipt = i[k]; }
+        });
+        
+        // 再處理其他欄位，若沒有 RECEIPT_ID 則尋找 RECEIPT DSTAMP
+        Object.keys(i).forEach(k => {
+            let kl = k.toUpperCase();
+            if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
+            if (kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(i[k]) || 0;
+            if (kl === "SKU SIZE" || kl === "SIZE") size = i[k];
+            if (receipt === "" && (kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP")) receipt = i[k];
+        });
         
         totRows++;
         totQty += qty;
