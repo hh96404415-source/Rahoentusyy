@@ -307,20 +307,38 @@
 </div>
 
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
-  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;" onclick="event.stopPropagation();">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 14px; font-weight: 700; font-family: 'Roboto Mono', monospace; text-align: left;">LOC: --</div>
-      <button id="sendToSearchBtn" class="primary-btn" style="padding: 4px 8px; font-size: 11px !important; background: var(--accent-blue); border-color: var(--accent-blue); color: #fff;" onclick="sendLocToSearchSession()">🔍 帶入查詢</button>
+  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 480px; max-height: 95vh; display: flex; flex-direction: column;" onclick="event.stopPropagation();">
+    
+    <!-- 標題與十字方向鍵 (D-PAD) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 60%;">
+        <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 16px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; text-shadow: 0 0 8px rgba(56,189,248,0.4);">LOC: --</div>
+        <button id="sendToSearchBtn" class="primary-btn" style="padding: 4px 12px; font-size: 11px !important; background: var(--accent-blue); border-color: var(--accent-blue); color: #fff;" onclick="sendLocToSearchSession()">🔍 帶入查詢</button>
+      </div>
+
+      <!-- 十字方向鍵 D-PAD -->
+      <div style="display: grid; grid-template-columns: 36px 36px 36px; grid-template-rows: 36px 36px; gap: 2px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; border: 1px solid var(--border-light); justify-content: center; align-content: center;">
+        <div style="grid-column: 2; grid-row: 1;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('up')" title="往上/上一行"><i class="ph ph-caret-up"></i></button></div>
+        <div style="grid-column: 1; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('left')" title="往左/上一列"><i class="ph ph-caret-left"></i></button></div>
+        <div style="grid-column: 2; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('down')" title="往下/下一行"><i class="ph ph-caret-down"></i></button></div>
+        <div style="grid-column: 3; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('right')" title="往右/下一列"><i class="ph ph-caret-right"></i></button></div>
+      </div>
     </div>
     
-    <!-- 🌟 新增：庫位即時庫存查詢預覽框 -->
-    <div id="palletModalAuditPreview" style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: left; display: none;">
+    <!-- 🌟 即時庫存查詢預覽框 (鎖死高度，防止按鈕跳動) -->
+    <div id="palletModalAuditPreview" style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: left;">
+      <div style="color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: flex-start; align-items: center; font-size: 12px;">
+        <span id="previewSearchStatus" style="color: var(--accent-cyan); font-family: 'Roboto Mono', monospace;">...</span>
+      </div>
+      <!-- 固定高度區塊，約可容納 4 組 Name Card -->
+      <div id="previewSearchContent" style="height: 220px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
     </div>
 
-    <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 12px; overflow-y: auto; flex: 1;">
+    <!-- 下方補貨任務區 -->
+    <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; overflow-y: auto; flex: 1;">
       <div id="palletModalList" style="display: flex; flex-direction: column; gap: 8px; text-align: left;"></div>
     </div>
-    <button class="primary-btn" style="width: 100%; margin-top: 12px; padding: 10px;" onclick="closePalletModal()">關閉 (CLOSE)</button>
+    <button class="primary-btn" style="width: 100%; margin-top: 12px; padding: 12px;" onclick="closePalletModal()">關閉 (CLOSE)</button>
   </div>
 </div>
 
@@ -936,6 +954,12 @@
     let prefix = str.substring(0, str.length - 5); let suffix = str.substring(str.length - 5);
     return `<span style="color:var(--text-muted);">${prefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${suffix}</span>`;
   }
+  function formatDbPalletStr(palletStr) {
+    if (!palletStr || palletStr === "-") return palletStr; let str = String(palletStr).trim();
+    if (str.length <= 5) return `<span style="color:#38bdf8; font-weight:700;">${str}</span>`;
+    let prefix = str.substring(0, str.length - 5); let suffix = str.substring(str.length - 5);
+    return `<span style="color:var(--text-muted);">${prefix}</span><span style="color:#38bdf8; font-weight:700;">${suffix}</span>`;
+  }
 
   let currentTab = '';
   const searchInput = document.getElementById('searchInput');
@@ -1157,47 +1181,45 @@
     }
   }
 
-  // 🌟 升級版：點擊地圖格子彈出視窗並自動載入查詢預覽
+  // 🌟 點擊地圖格子彈出視窗並自動載入查詢預覽 (加入 PL 統計)
   function showPalletModal(locStr, originalLoc, encodedPallets) {
     document.getElementById('palletModalOverlay').style.display = 'flex';
-    window.currentModalRawLoc = originalLoc; // 儲存原始 9 碼 LOC
-    let parts = String(locStr).split(' - ');
-    let displayLoc = locStr;
-    if (parts.length === 3) {
-        displayLoc = `${parts[0]}街- ${parts[1]}列 - ${parts[2]}/F`;
-    }
-    document.getElementById('palletModalSubtitle').innerHTML = `LOC: <span style="font-size:14px;">${displayLoc}</span>`;
+    window.currentModalRawLoc = originalLoc; 
     
-    // 初始化查詢預覽框狀態 (拉高預覽框最大高度)
+    let formattedLoc = originalLoc;
+    if (originalLoc && originalLoc.length >= 9) {
+        formattedLoc = `${originalLoc.substring(0,2)}-${originalLoc.substring(2,5)}-${originalLoc.substring(5,7)}-${originalLoc.substring(7,9)}`;
+    } else {
+        formattedLoc = originalLoc || locStr;
+    }
+    
+    // 強制單行顯示
+    document.getElementById('palletModalSubtitle').innerHTML = `LOC: <span style="font-size:16px; letter-spacing: 1px;">${formattedLoc}</span>`;
+    
     const previewBox = document.getElementById('palletModalAuditPreview');
     previewBox.style.display = 'block';
-    previewBox.innerHTML = `
-      <div style="color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: flex-start; align-items: center; font-size: 12px;">
-        <span id="previewSearchStatus" style="color: var(--accent-cyan); font-family: 'Roboto Mono', monospace;"><i class="ph ph-spinner ph-spin"></i> QUERYING...</span>
-      </div>
-      <div id="previewSearchContent" style="max-height: 200px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
-    `;
+    
+    const statusEl = document.getElementById('previewSearchStatus');
+    const contentEl = document.getElementById('previewSearchContent');
+    
+    statusEl.innerHTML = `<i class="ph ph-spinner ph-spin"></i> QUERYING...`;
+    contentEl.innerHTML = ``;
 
-    // 背景非同步查詢該 LOC 的庫存數據來填入預覽框
     window.google.script.run.withSuccessHandler((res) => {
-      const statusEl = document.getElementById('previewSearchStatus');
-      const contentEl = document.getElementById('previewSearchContent');
-
       if (res && res.data && res.data.length > 0) {
-          statusEl.innerHTML = `<i class="ph ph-check-circle" style="margin-right: 4px;"></i>TAG: <span style="color:#fff; font-weight:bold; margin-right: 8px;">${res.uniqueTags}</span> QTY: <span style="color:#fff; font-weight:bold;">${res.totalQty}</span>`;
+          let uniquePallets = res.uniquePallets || 0;
+          statusEl.innerHTML = `<i class="ph ph-check-circle" style="margin-right: 4px;"></i> PL: <span style="color:#fff; font-weight:bold; margin-right: 8px;">${uniquePallets}</span> TAG: <span style="color:#fff; font-weight:bold; margin-right: 8px;">${res.uniqueTags}</span> QTY: <span style="color:#fff; font-weight:bold;">${res.totalQty}</span>`;
           statusEl.style.color = 'var(--status-green)';
 
-          // 改用 2行1組的 Flex 卡片式排版，並加入序號
           let h = `<div style="display: flex; flex-direction: column; gap: 6px;">`;
           res.data.forEach((item, idx) => {
               let tag = item["TAG_ID"] || "-";
               let barcode = item["SUPPLIER_SKU"] || "-";
               let qty = item["QTY"] || "0";
-              let plDisplay = formatPalletStr(item["Pallet ID"] || "-");
+              let plDisplay = formatDbPalletStr(item["Pallet ID"] || "-");
 
               h += `
               <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px;">
-                  <!-- 第 1 行：序號、PL 與 QTY -->
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div style="font-size: 12px; font-family: 'Roboto Mono', monospace; display: flex; align-items: center;">
                           <span style="background: var(--accent-cyan); color: var(--bg-deep); font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 4px; margin-right: 6px; box-shadow: 0 0 5px rgba(56,189,248,0.4);">#${idx + 1}</span>
@@ -1205,7 +1227,6 @@
                       </div>
                       <div style="font-size: 14px; font-weight: bold; color: var(--text-main);"><span style="color:var(--text-muted); font-size:10px; font-weight:normal; margin-right: 4px;">QTY:</span>${qty}</div>
                   </div>
-                  <!-- 第 2 行：TAG 與 BARCODE -->
                   <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-family: 'Roboto Mono', monospace;">
                       <div><span style="color:var(--text-muted); margin-right: 4px;">TAG:</span><span style="color:var(--status-yellow);">${tag}</span></div>
                       <div><span style="color:var(--text-muted); margin-right: 4px;">BC:</span><span style="color:var(--accent-cyan);">${barcode}</span></div>
@@ -1249,7 +1270,7 @@
 
         html += `<div style="background:var(--bg-card); padding:8px 10px; border-radius:6px; border-left:3px solid var(--status-yellow); display:flex; flex-direction:column; gap:4px;">
                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px;">
-                     <span style="color:var(--text-muted); font-size:11px;">#${idx + 1}</span>
+                     <span style="background: rgba(251, 191, 36, 0.2); color: var(--status-yellow); font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 4px; font-family: 'Roboto Mono', monospace;">#${idx + 1}</span>
                      <span style="font-family:'Roboto Mono', monospace;">${pDisplay}</span>
                    </div>
                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:4px; font-size:11px; font-family:'Roboto Mono', monospace;">
@@ -1263,6 +1284,64 @@
     } catch (e) {
       listContainer.innerHTML = '<div style="color:var(--status-red); text-align:center; font-size:12px;">資料解析錯誤</div>';
     }
+  }
+  
+  // 🌟 十字方向鍵跨行穿梭邏輯
+  function navigatePalletModal(direction) {
+    const rawLoc = window.currentModalRawLoc;
+    if (!rawLoc || rawLoc.length < 9) return;
+    
+    let grpStr = rawLoc.substring(0, 2);
+    let midStr = rawLoc.substring(2, 5);
+    let bayStr = rawLoc.substring(5, 7);
+    let lvlStr = rawLoc.substring(7, 9);
+    
+    let grp = parseInt(grpStr, 10);
+    let bay = parseInt(bayStr, 10);
+    let lvl = parseInt(lvlStr, 10);
+    
+    if (direction === 'left') {
+        bay = Math.max(1, bay - 1);
+    } else if (direction === 'right') {
+        bay = Math.min(39, bay + 1);
+    } else if (direction === 'up') {
+        if (lvl < 3) {
+            lvl++;
+        } else if (lvl === 3) {
+            // 到達頂層，跨越走道前往上一行 (Group - 1)，底層 (Level 1)
+            if (grp > 1) {
+                grp--;
+                lvl = 1;
+            }
+        }
+    } else if (direction === 'down') {
+        if (lvl > 1) {
+            lvl--;
+        } else if (lvl === 1) {
+            // 到達底層，跨越走道前往下一行 (Group + 1)，頂層 (Level 3)
+            if (grp < 9) {
+                grp++;
+                lvl = 3;
+            }
+        }
+    }
+    
+    let newGrpStr = String(grp).padStart(2, '0');
+    let newBayStr = String(bay).padStart(2, '0');
+    let newLvlStr = String(lvl).padStart(2, '0');
+    let newComputedMid = String(Math.ceil(bay / 3) * 10).padStart(3, '0');
+    let newRawLoc = `${newGrpStr}${newComputedMid}${newBayStr}${newLvlStr}`;
+    let newDisplayLoc = `${newGrpStr}-${newComputedMid}-${newBayStr}-${newLvlStr}`;
+    
+    let encodedData = encodeURIComponent(JSON.stringify([]));
+    if (window.restockLocsCache) {
+      let targetKey = `${grp}-${bay}-${lvl}`;
+      if (window.restockLocsCache.has(targetKey)) {
+        encodedData = encodeURIComponent(JSON.stringify(window.restockLocsCache.get(targetKey)));
+      }
+    }
+    
+    showPalletModal(newDisplayLoc, newRawLoc, encodedData);
   }
 
   function closePalletModal(e) {
@@ -1392,16 +1471,20 @@
           let lvl = parseInt(loc.substring(7, 9), 10);
           if (!isNaN(grp) && !isNaN(bay) && !isNaN(lvl)) { 
             let key = `${grp}-${bay}-${lvl}`;
-            if (!restockLocs.has(key)) restockLocs.set(key, []);
-            restockRawLocs.set(key, loc); // 記錄原始 LOC
-            
-            let itemsArr = restockLocs.get(key);
-            if (pallet !== "-" || itemsArr.length === 0) {
-              itemsArr.push({ pallet: pallet, task: task, batch: batch, qty: qty });
+            if (!restockLocs.has(key)) restockLocs.set(key, new Set());
+            if (pallet !== "" && pallet !== "-") {
+                restockLocs.get(key).add(JSON.stringify({ pallet: pallet, task: task, batch: batch, qty: qty }));
             }
             parsedCount++; 
           }
         }
+      });
+      
+      // Store globally for navigation
+      window.restockLocsCache = new Map();
+      restockLocs.forEach((set, key) => {
+          let parsedArr = Array.from(set).map(str => JSON.parse(str));
+          window.restockLocsCache.set(key, parsedArr);
       });
 
       let msgEl = document.getElementById('mapMsgArea');
@@ -1439,16 +1522,17 @@
             let num = parseFloat(valStr); let bay = headerBays[cIdx]; let lvl = parseInt(colB, 10);
             let targetKey = `${currentRowGroup}-${bay}-${lvl}`;
             let isRestockTarget = restockLocs.has(targetKey);
-            let palletCount = isRestockTarget ? restockLocs.get(targetKey).length : 0;
+            let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
 
             if (isNaN(num) || num === 0 || valStr === "") { 
               valStr = "."; 
-              cellClass = isRestockTarget ? "map-restock-target" : "map-zero"; 
-            } else { 
-              cellClass = isRestockTarget ? "map-restock-target" : "map-normal"; 
+              cellClass = isRestockTarget ? "map-restock-target" : "map-zero";
+            } else {
+              cellClass = isRestockTarget ? "map-restock-target" : "map-normal";
             }
             
             let innerHTML = `<span class="cell-qty">${valStr}</span>`;
+
             if (isRestockTarget) {
               innerHTML += `<span class="cell-pallet">${palletCount}</span>`;
             } else {
@@ -1456,14 +1540,12 @@
             }
             
             // 🌟 破解公式：推算所有格子的 9 碼原始庫位
-            let palletArr = isRestockTarget ? restockLocs.get(targetKey) : [];
+            let palletArr = isRestockTarget ? Array.from(restockLocs.get(targetKey)).map(str => JSON.parse(str)) : [];
             let encodedData = encodeURIComponent(JSON.stringify(palletArr));
             let displayLoc = `${currentRowGroupStr} - ${String(bay).padStart(2, '0')} - ${lvl}`;
             
             let computedMid = String(Math.ceil(bay / 3) * 10).padStart(3, '0');
-            let originalLoc = (restockRawLocs && restockRawLocs.has(targetKey)) 
-                              ? restockRawLocs.get(targetKey) 
-                              : `${currentRowGroupStr}${computedMid}${String(bay).padStart(2, '0')}${String(lvl).padStart(2, '0')}`;
+            let originalLoc = `${String(currentRowGroupStr).padStart(2, '0')}${computedMid}${String(bay).padStart(2, '0')}${String(lvl).padStart(2, '0')}`;
                               
             let clickAttr = `onclick="showPalletModal('${displayLoc}', '${originalLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看庫位明細"`;
 
