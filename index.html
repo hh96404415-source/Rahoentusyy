@@ -179,7 +179,7 @@
 
     .map-table th, .map-table td {
       min-width: 24px; height: 24px; padding: 1px; font-size: 13px; text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.05); font-family: 'Roboto Mono', monospace;
+      border: 1px solid rgba(255, 255, 255, 0.05); font-family: 'Roboto Mono', monospace; cursor: pointer;
     }
     .map-table th { position: sticky; top: 0; z-index: 4; background: var(--bg-deep); color: var(--accent-cyan); font-size: 14px !important; }
     .map-table td:first-child, .map-table th:first-child {
@@ -212,6 +212,11 @@
       background-color: rgba(56, 189, 248, 0.35) !important;
       box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.9) !important;
     }
+    
+    /* 滑過所有地圖格子的互動回饋 */
+    .compact-table.map-table td:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
 
     .show-pallets .map-restock-target .cell-pallet {
       color: #fde047 !important;
@@ -237,7 +242,7 @@
     }
     .glass-box { 
       background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-      padding: 24px; border-radius: 12px; width: 90%; max-width: 340px; text-align: center;
+      padding: 24px; border-radius: 12px; width: 95%; max-width: 520px; text-align: center;
       position: relative;
     }
     
@@ -259,9 +264,8 @@
 <body>
 
 <div id="pinLoginOverlay" class="glass-overlay">
-  <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1);">
+  <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
     <div id="devGodModeBtn" style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; cursor: default; z-index: 10;" onclick="handleGodModeTap(event)" ontouchend="handleGodModeTap(event)"></div>
-
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -271,7 +275,7 @@
 </div>
 
 <div id="qrModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeSystemQrCode(event)">
-  <div class="glass-box" style="border-color: var(--accent-cyan);" onclick="event.stopPropagation();">
+  <div class="glass-box" style="border-color: var(--accent-cyan); max-width: 340px;" onclick="event.stopPropagation();">
     <div class="pin-title"><i class="ph-fill ph-hexagon"></i> Rahoentusy</div>
     <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 16px; font-family: 'Roboto Mono', monospace;">System Access Portal</div>
     <div id="sysQrCodeContainer" style="background: #fff; padding: 12px; border-radius: 8px; display: inline-block;"></div>
@@ -280,7 +284,7 @@
 </div>
 
 <div id="resetConfirmModal" class="glass-overlay" style="display: none; z-index: 9999;">
-  <div class="glass-box" style="border-color: var(--status-red);">
+  <div class="glass-box" style="border-color: var(--status-red); max-width: 340px;">
     <div class="pin-title" style="color: var(--status-red);"><i class="ph ph-warning"></i> Reset Session</div>
     <div style="color: var(--text-muted); font-size: 13px; margin: 12px 0 20px;">Clear current scan records? Cannot be undone.</div>
     <div style="display: flex; gap: 10px; justify-content: center;">
@@ -291,7 +295,7 @@
 </div>
 
 <div id="syncConfirmModal" class="glass-overlay" style="display: none; z-index: 9999;">
-  <div class="glass-box" style="border-color: var(--status-green);">
+  <div class="glass-box" style="border-color: var(--status-green); max-width: 340px;">
     <div class="pin-title" style="color: var(--status-green);"><i class="ph ph-cloud-arrow-up"></i> Sync Audit Data</div>
     <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin: 16px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
       <div><div style="font-size: 10px; color: var(--text-muted);">SYS</div><div id="modalSysQty" style="font-size: 24px; font-family:'Roboto Mono'; color:var(--text-main);">0</div></div>
@@ -307,31 +311,36 @@
 </div>
 
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
-  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 480px; max-height: 95vh; display: flex; flex-direction: column;" onclick="event.stopPropagation();">
+  <!-- 寬度加寬到 520px -->
+  <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column;" onclick="event.stopPropagation();">
     
     <!-- 標題與十字方向鍵 (D-PAD) -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 60%;">
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start; flex: 1; overflow: hidden;">
+        <!-- 標題加入 white-space: nowrap 強制單行，顯示原整 LOCA ID -->
         <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 16px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; text-shadow: 0 0 8px rgba(56,189,248,0.4);">LOC: --</div>
-        <button id="sendToSearchBtn" class="primary-btn" style="padding: 4px 12px; font-size: 11px !important; background: var(--accent-blue); border-color: var(--accent-blue); color: #fff;" onclick="sendLocToSearchSession()">🔍 帶入查詢</button>
       </div>
 
-      <!-- 十字方向鍵 D-PAD -->
-      <div style="display: grid; grid-template-columns: 36px 36px 36px; grid-template-rows: 36px 36px; gap: 2px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; border: 1px solid var(--border-light); justify-content: center; align-content: center;">
-        <div style="grid-column: 2; grid-row: 1;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('up')" title="往上/上一行"><i class="ph ph-caret-up"></i></button></div>
-        <div style="grid-column: 1; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('left')" title="往左/上一列"><i class="ph ph-caret-left"></i></button></div>
-        <div style="grid-column: 2; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('down')" title="往下/下一行"><i class="ph ph-caret-down"></i></button></div>
-        <div style="grid-column: 3; grid-row: 2;"><button class="icon-btn" style="width:34px; height:34px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('right')" title="往右/下一列"><i class="ph ph-caret-right"></i></button></div>
+      <div style="display: flex; align-items: center; gap: 16px; margin-left: 8px;">
+        <button id="sendToSearchBtn" class="primary-btn" style="padding: 6px 16px; font-size: 12px !important; background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; white-space: nowrap;" onclick="sendLocToSearchSession()">🔍 帶入查詢</button>
+        
+        <!-- 十字方向鍵 D-PAD 3x2 格，統一正方形按鈕 36x36px，不會上下疊在一起 -->
+        <div style="display: grid; grid-template-columns: 36px 36px 36px; grid-template-rows: 36px 36px; gap: 4px; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 8px; border: 1px solid var(--border-light); justify-content: center; align-content: center;">
+          <div style="grid-column: 2; grid-row: 1;"><button class="icon-btn" style="width:36px; height:36px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('up')" title="往上/上一行"><i class="ph ph-caret-up"></i></button></div>
+          <div style="grid-column: 1; grid-row: 2;"><button class="icon-btn" style="width:36px; height:36px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('left')" title="往左/上一列"><i class="ph ph-caret-left"></i></button></div>
+          <div style="grid-column: 2; grid-row: 2;"><button class="icon-btn" style="width:36px; height:36px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('down')" title="往下/下一行"><i class="ph ph-caret-down"></i></button></div>
+          <div style="grid-column: 3; grid-row: 2;"><button class="icon-btn" style="width:36px; height:36px; background: var(--bg-card); border-color: var(--border-light);" onclick="navigatePalletModal('right')" title="往右/下一列"><i class="ph ph-caret-right"></i></button></div>
+        </div>
       </div>
     </div>
     
-    <!-- 🌟 即時庫存查詢預覽框 (鎖死高度，防止按鈕跳動) -->
+    <!-- 🌟 即時庫存查詢預覽框 (鎖定高度 220px 防跳動) -->
     <div id="palletModalAuditPreview" style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: left;">
       <div style="color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: flex-start; align-items: center; font-size: 12px;">
         <span id="previewSearchStatus" style="color: var(--accent-cyan); font-family: 'Roboto Mono', monospace;">...</span>
       </div>
-      <!-- 固定高度區塊，約可容納 4 組 Name Card -->
-      <div id="previewSearchContent" style="height: 220px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
+      <!-- 固定高度區塊，約可容納 4 組 Name Card (220px) -->
+      <div id="previewSearchContent" style="max-height: 220px; min-height: 220px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
     </div>
 
     <!-- 下方補貨任務區 -->
@@ -535,9 +544,7 @@
       <button class="filter-btn-compact" data-filter="09" onclick="filterMap('09')">09</button>
     </div>
 
-    <!-- 🌟 BATCH 動態篩選按鈕容器 -->
     <div id="mapBatchFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;"></div>
-
     <div class="compact-table-wrapper"><div id="mapTableContainer"></div></div>
   </div>
 
@@ -672,11 +679,11 @@
         const resultData = inventory.filter(item => String(item.LOCATION_ID || "").toUpperCase() === targetLoc).sort((a, b) => String(a.TAG_ID || "").toUpperCase().localeCompare(String(b.TAG_ID || "").toUpperCase()));
         let sumQty = 0; let uniqueTags = new Set(); let uniquePallets = new Set();
         resultData.forEach(item => {
-          sumQty += parseFloat(item.QTY) || 0;
+          sumQty += parseFloat(item.QTY_ON_HAND) || 0;
           if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
           if (item["Pallet ID"] && item["Pallet ID"] !== "-") uniquePallets.add(item["Pallet ID"]);
         });
-        return { data: resultData, uniqueTags: uniqueTags.size, uniquePallets: uniquePallets.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
+        return { data: resultData, uniqueTags: uniqueTags.size, uniquePallets: uniquePallets.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU_ID", "Size", "QTY_ON_HAND", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
       }));
     }
 
@@ -684,14 +691,14 @@
       this._handleResult(fetchCache().then(data => {
         const inventory = data.inventory || [];
         const targetSku = String(sku).trim().toUpperCase();
-        const resultData = inventory.filter(item => String(item.SUPPLIER_SKU || "").toUpperCase() === targetSku);
+        const resultData = inventory.filter(item => String(item.SUPPLIER_SKU_ID || "").toUpperCase() === targetSku);
         let sumQty = 0; let uniqueLocs = new Set(); let uniqueTags = new Set();
         resultData.forEach(item => {
-          sumQty += parseFloat(item.QTY) || 0;
+          sumQty += parseFloat(item.QTY_ON_HAND) || 0;
           if (item.LOCATION_ID && item.LOCATION_ID !== "-") uniqueLocs.add(item.LOCATION_ID);
           if (item.TAG_ID && item.TAG_ID !== "-") uniqueTags.add(item.TAG_ID);
         });
-        return { data: resultData, uniqueLocations: uniqueLocs.size, uniqueTags: uniqueTags.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU", "Size", "QTY", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
+        return { data: resultData, uniqueLocations: uniqueLocs.size, uniqueTags: uniqueTags.size, totalQty: sumQty, columns: ["LOCATION_ID", "TAG_ID", "SKU_ID", "SUPPLIER_SKU_ID", "Size", "QTY_ON_HAND", "AL QTY", "Container ID", "Pallet ID", "Receipt Dstamp", "User Def Type 1", "Style", "User Def Type 7 (SKU)", "COLOUR", "Order Seasonality"] };
       }));
     }
 
@@ -934,7 +941,7 @@
   function triggerVibration(pattern) { if ("vibrate" in navigator) { try { navigator.vibrate(pattern); } catch(e) {} } }
   document.addEventListener('touchstart', () => { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true, passive: true });
 
-  const LABEL_MAP = { "TAG_ID": "Tag", "SKU_ID": "SKU", "SUPPLIER_SKU": "Barcode", "Size": "Size", "QTY": "QTY", "AL QTY": "ALQTY", "Pallet ID": "Pallet", "Receipt Dstamp": "Receipt", "User Def Type 1": "COO", "Style": "Style", "User Def Type 7 (SKU)": "Fabric", "COLOUR": "COLOUR", "Order Seasonality": "Season" };
+  const LABEL_MAP = { "TAG_ID": "Tag", "SKU_ID": "SKU", "SUPPLIER_SKU_ID": "Barcode", "Size": "Size", "QTY_ON_HAND": "QTY", "AL QTY": "ALQTY", "Pallet ID": "Pallet", "Receipt Dstamp": "Receipt", "User Def Type 1": "COO", "Style": "Style", "User Def Type 7 (SKU)": "Fabric", "COLOUR": "COLOUR", "Order Seasonality": "Season" };
   function getCustomLabel(colName) { if (!colName || colName.startsWith("COL_")) return ""; return LABEL_MAP[colName] || colName; }
   function getValue(item, key) { const val = item[key]; return (val !== undefined && val !== null && val !== "" && val !== "-") ? val : "NA"; }
 
@@ -948,12 +955,15 @@
     else if (part1 === "08" || part1 === "09") part1Color = "#ff003c"; 
     return `<span style="color:${part1Color}; font-weight:700;">${part1}</span><span style="color:#00ff41; font-weight:700;">${part2}</span><span style="color:#00d4ff; font-weight:700;">${part3}</span>`;
   }
+
   function formatPalletStr(palletStr) {
     if (!palletStr || palletStr === "-") return palletStr; let str = String(palletStr).trim();
     if (str.length <= 5) return `<span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${str}</span>`;
     let prefix = str.substring(0, str.length - 5); let suffix = str.substring(str.length - 5);
     return `<span style="color:var(--text-muted);">${prefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${suffix}</span>`;
   }
+  
+  // 🌟 DB 專用 Pallet 格式化 (亮青色)
   function formatDbPalletStr(palletStr) {
     if (!palletStr || palletStr === "-") return palletStr; let str = String(palletStr).trim();
     if (str.length <= 5) return `<span style="color:#38bdf8; font-weight:700;">${str}</span>`;
@@ -1011,7 +1021,7 @@
 
     const tags = new Set(res.data.map(i => i["TAG_ID"]).filter(v => v && v!=="-"));
     const locs = new Set(res.data.map(i => i["LOCATION_ID"]).filter(v => v && v!=="-"));
-    const sumQ = res.data.reduce((s, i) => s + (parseFloat(i["QTY"]) || 0), 0);
+    const sumQ = res.data.reduce((s, i) => s + (parseFloat(i["QTY_ON_HAND"]) || 0), 0);
 
     if (type === 'sku') { document.getElementById('sumLabel1').innerHTML=`LOC: <span>${locs.size}</span>`; document.getElementById('sumLabel2').innerHTML=`TAG: <span>${tags.size}</span>`; }
     else { document.getElementById('sumLabel1').innerHTML=`TAG: <span>${tags.size}</span>`; document.getElementById('sumLabel2').innerHTML=`PL: <span>${new Set(res.data.map(i=>i["Pallet ID"])).size}</span>`; }
@@ -1022,7 +1032,7 @@
       const card = document.createElement('div'); card.className = 'inventory-card';
       let h = `<div class="card-header">`;
       if(type==='sku') h += `<span class="card-primary">${getValue(item,"LOCATION_ID")}</span><span class="card-qty">TAG: ${getValue(item,"TAG_ID")}</span>`;
-      else h += `<span class="card-primary">TAG: ${getValue(item,"TAG_ID")}</span><span class="card-qty">QTY: ${getValue(item,"QTY")}</span>`;
+      else h += `<span class="card-primary">TAG: ${getValue(item,"TAG_ID")}</span><span class="card-qty">QTY: ${getValue(item,"QTY_ON_HAND")}</span>`;
       h += `</div><div class="card-footer"><span>SKU: ${getValue(item,"SKU_ID")}</span><span>${getValue(item,"Style")}-${getValue(item,"User Def Type 7 (SKU)")}</span><span>Sz: ${getValue(item,"Size")}</span><span>PL: ${formatPalletStr(getValue(item,"Pallet ID"))}</span></div>`;
       card.innerHTML = h; cont.appendChild(card);
     });
@@ -1181,19 +1191,18 @@
     }
   }
 
-  // 🌟 點擊地圖格子彈出視窗並自動載入查詢預覽 (加入 PL 統計)
   function showPalletModal(locStr, originalLoc, encodedPallets) {
     document.getElementById('palletModalOverlay').style.display = 'flex';
     window.currentModalRawLoc = originalLoc; 
     
+    // 🌟 格式化 LOC 標題為 XX-XXX-XX-XX
     let formattedLoc = originalLoc;
     if (originalLoc && originalLoc.length >= 9) {
         formattedLoc = `${originalLoc.substring(0,2)}-${originalLoc.substring(2,5)}-${originalLoc.substring(5,7)}-${originalLoc.substring(7,9)}`;
     } else {
-        formattedLoc = originalLoc || locStr;
+        formattedLoc = originalLoc || locStr; // Fallback
     }
     
-    // 強制單行顯示
     document.getElementById('palletModalSubtitle').innerHTML = `LOC: <span style="font-size:16px; letter-spacing: 1px;">${formattedLoc}</span>`;
     
     const previewBox = document.getElementById('palletModalAuditPreview');
@@ -1207,6 +1216,7 @@
 
     window.google.script.run.withSuccessHandler((res) => {
       if (res && res.data && res.data.length > 0) {
+          // 確保 uniquePallets 被正確傳遞並顯示
           let uniquePallets = res.uniquePallets || 0;
           statusEl.innerHTML = `<i class="ph ph-check-circle" style="margin-right: 4px;"></i> PL: <span style="color:#fff; font-weight:bold; margin-right: 8px;">${uniquePallets}</span> TAG: <span style="color:#fff; font-weight:bold; margin-right: 8px;">${res.uniqueTags}</span> QTY: <span style="color:#fff; font-weight:bold;">${res.totalQty}</span>`;
           statusEl.style.color = 'var(--status-green)';
@@ -1214,20 +1224,20 @@
           let h = `<div style="display: flex; flex-direction: column; gap: 6px;">`;
           res.data.forEach((item, idx) => {
               let tag = item["TAG_ID"] || "-";
-              let barcode = item["SUPPLIER_SKU"] || "-";
-              let qty = item["QTY"] || "0";
+              let barcode = item["SUPPLIER_SKU_ID"] || "-";
+              let qty = item["QTY_ON_HAND"] || "0";
               let plDisplay = formatDbPalletStr(item["Pallet ID"] || "-");
 
               h += `
-              <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <div style="font-size: 12px; font-family: 'Roboto Mono', monospace; display: flex; align-items: center;">
-                          <span style="background: var(--accent-cyan); color: var(--bg-deep); font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 4px; margin-right: 6px; box-shadow: 0 0 5px rgba(56,189,248,0.4);">#${idx + 1}</span>
+                      <div style="font-size: 13px; font-family: 'Roboto Mono', monospace; display: flex; align-items: center;">
+                          <span style="background: var(--accent-cyan); color: var(--bg-deep); font-size: 11px; font-weight: 900; padding: 2px 6px; border-radius: 4px; margin-right: 8px; box-shadow: 0 0 8px rgba(56,189,248,0.5);">#${idx + 1}</span>
                           <span><span style="color:var(--text-muted); margin-right: 4px;">PL:</span>${plDisplay}</span>
                       </div>
-                      <div style="font-size: 14px; font-weight: bold; color: var(--text-main);"><span style="color:var(--text-muted); font-size:10px; font-weight:normal; margin-right: 4px;">QTY:</span>${qty}</div>
+                      <div style="font-size: 15px; font-weight: bold; color: var(--text-main);"><span style="color:var(--text-muted); font-size:11px; font-weight:normal; margin-right: 4px;">QTY:</span>${qty}</div>
                   </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-family: 'Roboto Mono', monospace;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: 'Roboto Mono', monospace; padding-left: 32px;">
                       <div><span style="color:var(--text-muted); margin-right: 4px;">TAG:</span><span style="color:var(--status-yellow);">${tag}</span></div>
                       <div><span style="color:var(--text-muted); margin-right: 4px;">BC:</span><span style="color:var(--accent-cyan);">${barcode}</span></div>
                   </div>
@@ -1248,7 +1258,7 @@
     try {
       const items = JSON.parse(decodeURIComponent(encodedPallets));
       if (!items || items.length === 0) {
-        listContainer.innerHTML = '<div style="color:var(--status-yellow); text-align:center; font-size:12px;">無棧板資料 (No Pallet Data)</div>';
+        listContainer.innerHTML = '<div style="color:var(--status-yellow); text-align:center; font-size:12px; padding: 10px;">無棧板資料 (No Pallet Data)</div>';
         return;
       }
       
@@ -1303,7 +1313,7 @@
     if (direction === 'left') {
         bay = Math.max(1, bay - 1);
     } else if (direction === 'right') {
-        bay = Math.min(39, bay + 1);
+        bay = Math.min(39, bay + 1); // 預設最大列數
     } else if (direction === 'up') {
         if (lvl < 3) {
             lvl++;
@@ -1329,7 +1339,10 @@
     let newGrpStr = String(grp).padStart(2, '0');
     let newBayStr = String(bay).padStart(2, '0');
     let newLvlStr = String(lvl).padStart(2, '0');
+    
+    // 🌟 動態推算中間的走道/中區代碼 (bay / 3) * 10
     let newComputedMid = String(Math.ceil(bay / 3) * 10).padStart(3, '0');
+    
     let newRawLoc = `${newGrpStr}${newComputedMid}${newBayStr}${newLvlStr}`;
     let newDisplayLoc = `${newGrpStr}-${newComputedMid}-${newBayStr}-${newLvlStr}`;
     
@@ -1435,7 +1448,6 @@
 
   function renderMapTableCore() {
       const restockLocs = new Map();
-      const restockRawLocs = new Map(); // 儲存該座標對應的原始 9 碼 LOC
       let parsedCount = 0;
       let lastValidLoc = "";
       let lastValidBatch = "";
@@ -1539,7 +1551,7 @@
               innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
             }
             
-            // 🌟 破解公式：推算所有格子的 9 碼原始庫位
+            // 🌟 破解公式：推算所有格子的 9 碼原始庫位，不管有沒有任務都能點擊查詢！
             let palletArr = isRestockTarget ? Array.from(restockLocs.get(targetKey)).map(str => JSON.parse(str)) : [];
             let encodedData = encodeURIComponent(JSON.stringify(palletArr));
             let displayLoc = `${currentRowGroupStr} - ${String(bay).padStart(2, '0')} - ${lvl}`;
@@ -1547,6 +1559,7 @@
             let computedMid = String(Math.ceil(bay / 3) * 10).padStart(3, '0');
             let originalLoc = `${String(currentRowGroupStr).padStart(2, '0')}${computedMid}${String(bay).padStart(2, '0')}${String(lvl).padStart(2, '0')}`;
                               
+            // 替每個格子綁定點擊事件
             let clickAttr = `onclick="showPalletModal('${displayLoc}', '${originalLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看庫位明細"`;
 
             h += `<td class="${cellClass}" ${clickAttr}>${innerHTML}</td>`;
@@ -1669,7 +1682,7 @@
       stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>';
       if (!res || !res.data || res.data.length === 0) { msg.textContent = `⚠️ NO LOC RECORD (${loc}) - BLIND MODE`; msg.style.color="var(--status-yellow)"; }
       auditState = { location: loc, systemItemsMap: {}, scannedCounts: {}, scanHistoryStack: [], lastRawCodeMap: {}, lastLookupCodeMap: {}, activeFilter: 'all', lastScannedKey: null };
-      if (res && res.data) { res.data.forEach(item => { const key = (item["TAG_ID"] || item["SUPPLIER_SKU"] || item["SKU_ID"] || "UNKNOWN").toString().trim().toUpperCase(); if (!auditState.systemItemsMap[key]) { auditState.systemItemsMap[key] = { key: key, sysQty: 0, tag: item["TAG_ID"]||"-", sku: item["SKU_ID"]||"-", barcode: item["SUPPLIER_SKU"]||"-", style: item["Style"]||"-", size: item["Size"]||"-", palletId: item["Pallet ID"]||"-", loc: item["LOCATION_ID"]||loc }; } auditState.systemItemsMap[key].sysQty += (parseFloat(item["QTY"]) || 0); }); }
+      if (res && res.data) { res.data.forEach(item => { const key = (item["TAG_ID"] || item["SUPPLIER_SKU_ID"] || item["SKU_ID"] || "UNKNOWN").toString().trim().toUpperCase(); if (!auditState.systemItemsMap[key]) { auditState.systemItemsMap[key] = { key: key, sysQty: 0, tag: item["TAG_ID"]||"-", sku: item["SKU_ID"]||"-", barcode: item["SUPPLIER_SKU_ID"]||"-", style: item["Style"]||"-", size: item["Size"]||"-", palletId: item["Pallet ID"]||"-", loc: item["LOCATION_ID"]||loc }; } auditState.systemItemsMap[key].sysQty += (parseFloat(item["QTY_ON_HAND"]) || 0); }); }
       document.getElementById('auditScanSection').style.display = 'block'; document.getElementById('auditSummaryBox').style.display = 'flex'; document.getElementById('auditFilterGroup').style.display = 'flex'; document.getElementById('auditScanInput').focus(); renderAuditComparison();
     }).withFailureHandler((e) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>'; msg.textContent = "LOAD ERROR: " + e.message; }).searchLocation(loc);
   }
