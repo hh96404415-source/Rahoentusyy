@@ -136,7 +136,7 @@
       display: flex; gap: 4px; padding: 2px 0;
     }
     .filter-btn-compact {
-      flex: 1; padding: 2px 0; font-size: 10px !important; background: var(--bg-deep); 
+      flex: 1; padding: 4px 6px; font-size: 11px !important; background: var(--bg-deep); 
       border: 1px solid var(--border-light); color: var(--text-muted); border-radius: 4px; 
       display: flex; flex-direction: row; align-items: baseline; justify-content: center; gap: 3px;
     }
@@ -177,10 +177,9 @@
     .compact-table tr:nth-child(even) td { background-color: rgba(255,255,255,0.02); }
     .compact-table tr:hover td { background-color: rgba(56, 189, 248, 0.05); }
 
-    /* 針對補貨頁列表字體放大至 16px */
-    #listView .compact-table { font-size: 16px !important; }
-    #listView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
-    #listView .compact-table td { padding: 8px 10px; }
+    #listView .compact-table, #gohView .compact-table { font-size: 16px !important; }
+    #listView .compact-table th, #gohView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
+    #listView .compact-table td, #gohView .compact-table td { padding: 8px 10px; }
 
     .map-table th, .map-table td {
       min-width: 24px; height: 24px; padding: 1px; font-size: 13px; text-align: center;
@@ -264,7 +263,6 @@
     .show-pallets .cell-pallet { display: inline-block !important; font-weight: 900; color: #fde047; text-shadow: 0 0 5px rgba(253, 224, 71, 0.8); font-size: 14px; }
     .cell-pallet { display: none; }
 
-    /* D-Pad 十字搖桿專用 CSS */
     .d-pad-container {
         display: grid; 
         grid-template-areas: 
@@ -280,7 +278,7 @@
         box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
     }
     .d-pad-btn {
-        width: 38px; height: 38px; 
+        width: 32px; height: 32px;
         background: var(--bg-hover); 
         border: 1px solid rgba(255,255,255,0.1); 
         border-radius: 8px;
@@ -296,14 +294,13 @@
         background: var(--accent-cyan);
         color: var(--bg-deep);
     }
-    .d-pad-btn i { font-size: 20px; font-weight: bold; }
+    .d-pad-btn i { font-size: 16px; font-weight: bold; }
     
     .btn-up { grid-area: up; }
     .btn-left { grid-area: left; }
     .btn-right { grid-area: right; }
     .btn-down { grid-area: down; }
 
-    /* 動畫效果：用於方向鍵切換時突顯變動的座標數字 */
     @keyframes flashHighlight {
         0% { color: #fde047; text-shadow: 0 0 15px rgba(253, 224, 71, 1); transform: scale(1.1); }
         50% { color: #fef08a; text-shadow: 0 0 25px rgba(253, 224, 71, 0.8); transform: scale(1.15); }
@@ -367,36 +364,28 @@
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
   <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column; padding: 16px;" onclick="event.stopPropagation();">
     
-    <!-- 頂部導航區：左側十字搖桿，右側大座標 -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
       
-      <!-- 十字搖桿 (左側) -->
-      <div class="d-pad-container">
+      <div class="d-pad-container" style="flex-shrink: 0;">
         <div class="d-pad-btn btn-up" onclick="navigatePalletModal('up')" title="往上 (層數+1)"><i class="ph ph-caret-up"></i></div>
         <div class="d-pad-btn btn-left" onclick="navigatePalletModal('left')" title="往左 (列數-1)"><i class="ph ph-caret-left"></i></div>
         <div class="d-pad-btn btn-right" onclick="navigatePalletModal('right')" title="往右 (列數+1)"><i class="ph ph-caret-right"></i></div>
         <div class="d-pad-btn btn-down" onclick="navigatePalletModal('down')" title="往下 (層數-1)"><i class="ph ph-caret-down"></i></div>
       </div>
 
-      <!-- 9碼原整 LOC ID (右側，38px) -->
       <div style="display: flex; align-items: center; justify-content: flex-end; flex: 1; overflow: hidden; padding-left: 8px;">
-        <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 38px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; text-shadow: 0 0 12px rgba(56,189,248,0.5); letter-spacing: -1px;">--</div>
+        <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 25px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; text-shadow: 0 0 12px rgba(56,189,248,0.5); letter-spacing: -1px;">--</div>
       </div>
-
     </div>
     
-    <!-- 即時庫存查詢預覽框 (高度鎖死 220px 防跳動) -->
     <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: left;">
       <div style="color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
         <span id="previewSearchStatus" style="color: var(--accent-cyan); font-family: 'Roboto Mono', monospace;">...</span>
-        <!-- 極小化「帶入查詢」圖示按鈕移至此行最右側 -->
         <button id="sendToSearchBtn" class="primary-btn" style="padding: 0 !important; background: transparent; border: none; color: var(--accent-cyan); min-width: 24px; height: 24px; box-shadow: none;" onclick="sendLocToSearchSession()" title="帶入查詢頁面"><i class="ph ph-magnifying-glass" style="font-size: 18px;"></i></button>
       </div>
-      <!-- 高度鎖死 -->
       <div id="previewSearchContent" style="max-height: 220px; min-height: 220px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
     </div>
 
-    <!-- 下方補貨任務區 -->
     <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; overflow-y: auto; flex: 1;">
       <div id="palletModalList" style="display: flex; flex-direction: column; gap: 8px; text-align: left;"></div>
     </div>
@@ -413,7 +402,7 @@
   
   <div class="tab-bar" id="mainTabBar"></div>
 
-  <!-- 查詢 (Search) -->
+  <!-- Search View -->
   <div id="searchView" class="view-section" style="display: none;">
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="Enter LOC or Barcode" autofocus>
@@ -428,7 +417,7 @@
     <div id="cardContainer" class="card-list"></div>
   </div>
 
-  <!-- 補貨 (List) -->
+  <!-- List View -->
   <div id="listView" class="view-section" style="display: none;">
     <div id="listMsgArea" class="message"></div>
     <div class="summary-box-compact" id="listSummaryBox" style="display: none;">
@@ -443,7 +432,7 @@
     <div class="compact-table-wrapper"><div id="listTableContainer"></div></div>
   </div>
 
-  <!-- 盤點 (Audit) -->
+  <!-- Audit View -->
   <div id="auditView" class="view-section" style="display: none;">
     <div class="search-box" style="margin-bottom: 4px;">
       <input type="text" id="auditLocInput" placeholder="Enter LOCATION">
@@ -495,7 +484,7 @@
     <div id="auditResultContainer"></div>
   </div>
 
-  <!-- 訂單 (OrderStatus) -->
+  <!-- Order Status View -->
   <div id="orderStatusView" class="view-section" style="display: none;">
     <div id="orderStatusMsgArea" class="message"></div>
     <div class="summary-box-compact" id="orderStatusSummaryBox" style="display: none;">
@@ -508,7 +497,7 @@
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
   </div>
 
-  <!-- DI (Gao) -->
+  <!-- GAO View -->
   <div id="gaoView" class="view-section" style="display: none;">
     <div id="gaoMsgArea" class="message"></div>
     
@@ -540,7 +529,7 @@
     <div class="compact-table-wrapper"><div id="gaoTableContainer"></div></div>
   </div>
 
-  <!-- REC -->
+  <!-- REC View -->
   <div id="recView" class="view-section" style="display: none;">
     <div id="recMsgArea" class="message"></div>
     <div class="summary-box-compact" id="recSummaryBox" style="display: none;">
@@ -556,7 +545,7 @@
     <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
   </div>
   
-  <!-- DB -->
+  <!-- DB View -->
   <div id="dbView" class="view-section" style="display: none;">
     <div id="dbMsgArea" class="message"></div>
     <div class="summary-box-compact" id="dbSummaryBox" style="display: none;">
@@ -569,7 +558,7 @@
     <div class="compact-table-wrapper"><div id="dbTableContainer"></div></div>
   </div>
 
-  <!-- MAP -->
+  <!-- MAP View -->
   <div id="mapView" class="view-section" style="display: none;">
     <div id="mapMsgArea" class="message"></div>
     
@@ -584,7 +573,6 @@
       </div>
     </div>
 
-    <!-- 01~09 列數篩選群組 -->
     <div id="mapFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterMap('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="01" onclick="filterMap('01')">01</button>
@@ -602,7 +590,7 @@
     <div class="compact-table-wrapper"><div id="mapTableContainer"></div></div>
   </div>
 
-  <!-- LP -->
+  <!-- LP View -->
   <div id="lpView" class="view-section" style="display: none;">
     <div id="lpMsgArea" class="message"></div>
     <div class="summary-box-compact" id="lpSummaryBox" style="display: none;">
@@ -615,7 +603,7 @@
     <div class="compact-table-wrapper"><div id="lpTableContainer"></div></div>
   </div>
 
-  <!-- UPH -->
+  <!-- UPH View -->
   <div id="uphView" class="view-section" style="display: none;">
     <div id="uphMsgArea" class="message"></div>
     <div class="summary-box-compact" id="uphSummaryBox" style="display: none;">
@@ -628,6 +616,21 @@
     <div class="compact-table-wrapper"><div id="uphTableContainer"></div></div>
   </div>
 
+  <!-- GOH 掛衣區 View -->
+  <div id="gohView" class="view-section" style="display: none;">
+    <div id="gohMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="gohSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totGohRows">0</span></div>
+      <div class="summary-item-compact">QTY:<span id="totGohQty" style="color:var(--status-green);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadGohDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <!-- 篩選鍵容器 (已在 JS 中改為 Grid 排版) -->
+    <div id="gohFilterGroup" style="display: none; margin-bottom: 8px;"></div>
+    <div class="compact-table-wrapper"><div id="gohTableContainer"></div></div>
+  </div>
+
 </div>
 
 <script>
@@ -638,6 +641,29 @@
 
   let cachedData = null;
   let fetchPromise = null; 
+
+  window.bayLookup = new Map();
+  window.getBayFor = function(grp, col) {
+      let key = `${parseInt(grp, 10)}-${parseInt(col, 10)}`;
+      if (window.bayLookup.has(key)) return window.bayLookup.get(key);
+      
+      let closestBay = null;
+      let minDiff = 999;
+      window.bayLookup.forEach((bVal, bKey) => {
+          let parts = bKey.split('-');
+          let g = parseInt(parts[0], 10);
+          let c = parseInt(parts[1], 10);
+          if (g === parseInt(grp, 10)) {
+              let diff = Math.abs(parseInt(col, 10) - c);
+              if (diff < minDiff) {
+                  minDiff = diff;
+                  closestBay = bVal;
+              }
+          }
+      });
+      if (closestBay) return closestBay;
+      return String(Math.ceil(parseInt(col, 10) / 3)).padStart(2, '0');
+  };
 
   function decodeFirebaseKeys(obj) {
     if (Array.isArray(obj)) {
@@ -698,13 +724,13 @@
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
         let authList = []; let authHeaders = [];
-        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
+        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB", "GOH"]; } 
         else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || []; }
 
         const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
         
-        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph" };
+        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph", "GOH": "goh" };
         let permissions = [];
         
         authHeaders.forEach(key => {
@@ -726,7 +752,6 @@
       }));
     }
 
-    // 🌟 已更新欄位名稱：QTY -> QTY_ON_HAND, SUPPLIER_SKU -> SUPPLIER_SKU_ID
     searchLocation(loc) {
       this._handleResult(fetchCache().then(data => {
         const inventory = data.inventory || [];
@@ -742,7 +767,6 @@
       }));
     }
 
-    // 🌟 已更新欄位名稱：SUPPLIER_SKU -> SUPPLIER_SKU_ID
     searchSupplierSku(sku) {
       this._handleResult(fetchCache().then(data => {
         const inventory = data.inventory || [];
@@ -855,7 +879,7 @@
     const godModePayload = { 
         success: true, 
         name: "Dev Admin", 
-        permissions: ["rec", "gao", "lp", "uph", "list", "map", "orderStatus", "search", "audit", "db"] 
+        permissions: ["rec", "gao", "lp", "uph", "list", "map", "orderStatus", "search", "audit", "db", "goh"] 
     };
     sessionStorage.setItem('wms_auth', JSON.stringify(godModePayload)); 
     applyPermissions(godModePayload);
@@ -888,7 +912,8 @@
   const TAB_INFO = {
     "search": { label: "查詢", icon: "ph-magnifying-glass" }, "list": { label: "補貨", icon: "ph-recycle" }, "audit": { label: "盤點", icon: "ph-clipboard-text" },
     "orderStatus": { label: "訂單", icon: "ph-package" }, "gao": { label: "DI", icon: "ph-truck" }, "rec": { label: "REC", icon: "ph-target" },
-    "db": { label: "DB", icon: "ph-database" }, "map": { label: "MAP", icon: "ph-map-trifold" }, "lp": { label: "LP", icon: "ph-list-numbers" }, "uph": { label: "UPH", icon: "ph-trend-up" }
+    "db": { label: "DB", icon: "ph-database" }, "map": { label: "MAP", icon: "ph-map-trifold" }, "lp": { label: "LP", icon: "ph-list-numbers" }, "uph": { label: "UPH", icon: "ph-trend-up" },
+    "goh": { label: "GOH", icon: "ph-t-shirt" }
   };
 
   function applyPermissions(authData) {
@@ -1050,6 +1075,7 @@
     else if (tab === 'map') loadMapData();
     else if (tab === 'lp') loadLoadplanData(); 
     else if (tab === 'uph') loadUphData();     
+    else if (tab === 'goh') loadGohDataList();
   }
 
   function fetchData() {
@@ -1215,7 +1241,6 @@
     let timer = startLoadingMsg('recMsgArea', 'REC STAT');
     window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('recMsgArea', timer); fetchAndUpdateSyncTime('GetUpReceivedQty', 'lastRecRefreshedTime'); renderRecData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('recMsgArea', timer); document.getElementById('recMsgArea').textContent="ERROR:"+e.message; }).getRecData();
     
-    // 獨立呼叫 DB 資料來取得 UPD 數值
     window.google.script.run.withSuccessHandler((dbRes) => {
       if (dbRes && dbRes.data) {
         const updItem = dbRes.data.find(i => String(i["TITLE"]||"").trim().toUpperCase() === "UPD");
@@ -1257,36 +1282,29 @@
     }
   }
 
-  function showPalletModal(locStr, originalLoc, encodedPallets, prevLoc = null) {
+  function showPalletModal(displayLoc, originalLoc, encodedPallets, prevLoc = null) {
     document.getElementById('palletModalOverlay').style.display = 'flex';
     window.currentModalRawLoc = originalLoc; 
     
-    // 強制轉換為標準 9 碼格式 (例如：02-01-028-02)
-    let formattedLoc = originalLoc;
-    if (originalLoc && originalLoc.length >= 9) {
-        let g = originalLoc.substring(0,2);
-        let bay = originalLoc.substring(2,4);
-        let c = originalLoc.substring(4,7);
-        let l = originalLoc.substring(7,9);
+    let formattedLoc = displayLoc;
+    
+    if (prevLoc && prevLoc.length >= 9 && originalLoc && originalLoc.length >= 9) {
+        let pg = prevLoc.substring(0,2);
+        let pbay = prevLoc.substring(2,4);
+        let pc = prevLoc.substring(4,7);
+        let pl = prevLoc.substring(7,9);
         
-        if (prevLoc && prevLoc.length >= 9) {
-            let pg = prevLoc.substring(0,2);
-            let pbay = prevLoc.substring(2,4);
-            let pc = prevLoc.substring(4,7);
-            let pl = prevLoc.substring(7,9);
-            
-            // 變化的數字套用高亮與閃爍特效
-            let hcG = (g !== pg) ? 'class="animate-change"' : '';
-            let hcBay = (bay !== pbay) ? 'class="animate-change"' : '';
-            let hcC = (c !== pc) ? 'class="animate-change"' : '';
-            let hcL = (l !== pl) ? 'class="animate-change"' : '';
-            
-            formattedLoc = `<span ${hcG}>${g}</span>-<span ${hcBay}>${bay}</span>-<span ${hcC}>${c}</span>-<span ${hcL}>${l}</span>`;
-        } else {
-            formattedLoc = `${g}-${bay}-${c}-${l}`;
-        }
-    } else {
-        formattedLoc = originalLoc || locStr;
+        let cg = originalLoc.substring(0,2);
+        let cb = originalLoc.substring(2,4);
+        let cc = originalLoc.substring(4,7);
+        let cl = originalLoc.substring(7,9);
+        
+        let hcG = (cg !== pg) ? 'class="animate-change"' : '';
+        let hcBay = (cb !== pbay) ? 'class="animate-change"' : '';
+        let hcC = (cc !== pc) ? 'class="animate-change"' : '';
+        let hcL = (cl !== pl) ? 'class="animate-change"' : '';
+        
+        formattedLoc = `<span ${hcG}>${cg}</span>-<span ${hcBay}>${cb}</span>-<span ${hcC}>${cc}</span>-<span ${hcL}>${cl}</span>`;
     }
     
     document.getElementById('palletModalSubtitle').innerHTML = formattedLoc;
@@ -1383,7 +1401,6 @@
     if (!rawLoc || rawLoc.length < 9) return;
     
     let grpStr = rawLoc.substring(0, 2);
-    let bayStr = rawLoc.substring(2, 4);
     let colStr = rawLoc.substring(4, 7);
     let lvlStr = rawLoc.substring(7, 9);
     
@@ -1391,34 +1408,18 @@
     let col = parseInt(colStr, 10);
     let lvl = parseInt(lvlStr, 10);
     
-    // 跨行/列/層邏輯
-    if (direction === 'left') {
-        col = Math.max(1, col - 1);
-    } else if (direction === 'right') {
-        col = Math.min(999, col + 1); 
-    } else if (direction === 'up') {
-        if (lvl < 3) {
-            lvl++;
-        } else if (lvl === 3) {
-            if (grp > 1) {
-                grp--;
-                lvl = 1;
-            }
-        }
+    if (direction === 'left') { col = Math.max(1, col - 1); } 
+    else if (direction === 'right') { col = Math.min(999, col + 1); } 
+    else if (direction === 'up') {
+        if (lvl < 3) { lvl++; } 
+        else if (lvl === 3) { if (grp > 1) { grp--; lvl = 1; } }
     } else if (direction === 'down') {
-        if (lvl > 1) {
-            lvl--;
-        } else if (lvl === 1) {
-            if (grp < 9) {
-                grp++;
-                lvl = 3;
-            }
-        }
+        if (lvl > 1) { lvl--; } 
+        else if (lvl === 1) { if (grp < 9) { grp++; lvl = 3; } }
     }
     
     let newGrpStr = String(grp).padStart(2, '0');
-    let newBay = Math.ceil(col / 3);
-    let newBayStr = String(newBay).padStart(2, '0');
+    let newBayStr = window.getBayFor(grp, col);
     let newColStr = String(col).padStart(3, '0');
     let newLvlStr = String(lvl).padStart(2, '0');
     
@@ -1475,17 +1476,39 @@
 
     window.google.script.run.withSuccessHandler((invRes) => {
       globalInventoryPalletMap.clear();
+      window.bayLookup.clear();
+
       (invRes || []).forEach(item => {
           let loc = (item.LOCATION_ID || "").toString().trim().toUpperCase();
           let pallet = (item["Pallet ID"] || "").toString().trim();
-          if (loc && loc !== "-" && pallet && pallet !== "-") {
-              if (!globalInventoryPalletMap.has(loc)) globalInventoryPalletMap.set(loc, new Set());
-              globalInventoryPalletMap.get(loc).add(pallet);
+          if (loc && loc !== "-") {
+              if (loc.length >= 9) {
+                  let g = parseInt(loc.substring(0,2), 10);
+                  let b = loc.substring(2,4);
+                  let c = parseInt(loc.substring(4,7), 10);
+                  window.bayLookup.set(`${g}-${c}`, b);
+              }
+
+              if (pallet && pallet !== "-") {
+                  if (!globalInventoryPalletMap.has(loc)) globalInventoryPalletMap.set(loc, new Set());
+                  globalInventoryPalletMap.get(loc).add(pallet);
+              }
           }
       });
 
       window.google.script.run.withSuccessHandler((alRes) => {
         globalAlData = alRes && alRes.data ? alRes.data : [];
+
+        globalAlData.forEach(item => {
+            let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
+            let loc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
+            if (loc.length >= 9) {
+                let g = parseInt(loc.substring(0,2), 10);
+                let b = loc.substring(2,4);
+                let c = parseInt(loc.substring(4,7), 10);
+                window.bayLookup.set(`${g}-${c}`, b);
+            }
+        });
 
         window.google.script.run.withSuccessHandler((res) => {
           stopLoadingMsg('mapMsgArea', timer); 
@@ -1546,42 +1569,42 @@
       let lastValidTask = "";
 
       globalAlData.forEach(item => {
-        let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
-        let rawLoc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
-        if (rawLoc !== "") { lastValidLoc = rawLoc; }
-        let loc = lastValidLoc;
+          let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
+          let rawLoc = locKey ? String(item[locKey] || "").trim().toUpperCase() : "";
+          if (rawLoc !== "") { lastValidLoc = rawLoc; }
+          let loc = lastValidLoc;
 
-        let batchKey = Object.keys(item).find(k => String(k).toUpperCase() === "BATCH");
-        let rawBatch = batchKey ? String(item[batchKey] || "").trim().toUpperCase() : "";
-        if (rawBatch !== "") { lastValidBatch = rawBatch; }
-        let batch = lastValidBatch;
+          let batchKey = Object.keys(item).find(k => String(k).toUpperCase() === "BATCH");
+          let rawBatch = batchKey ? String(item[batchKey] || "").trim().toUpperCase() : "";
+          if (rawBatch !== "") { lastValidBatch = rawBatch; }
+          let batch = lastValidBatch;
 
-        let taskKey = Object.keys(item).find(k => String(k).toUpperCase().includes("TASK"));
-        let rawTask = taskKey ? String(item[taskKey] || "").trim().toUpperCase() : "";
-        if (rawTask !== "") { lastValidTask = rawTask; }
-        let task = lastValidTask;
+          let taskKey = Object.keys(item).find(k => String(k).toUpperCase().includes("TASK"));
+          let rawTask = taskKey ? String(item[taskKey] || "").trim().toUpperCase() : "";
+          if (rawTask !== "") { lastValidTask = rawTask; }
+          let task = lastValidTask;
 
-        if (activeMapBatchFilter !== 'ALL' && batch !== activeMapBatchFilter) return;
+          if (activeMapBatchFilter !== 'ALL' && batch !== activeMapBatchFilter) return;
 
-        let palletKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase().includes("PL"));
-        let pallet = palletKey ? String(item[palletKey] || "").trim() : "-";
+          let palletKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase().includes("PL"));
+          let pallet = palletKey ? String(item[palletKey] || "").trim() : "-";
 
-        let qtyKey = Object.keys(item).find(k => String(k).toUpperCase().includes("QTY"));
-        let qty = qtyKey ? String(item[qtyKey] || "").trim() : "0";
+          let qtyKey = Object.keys(item).find(k => String(k).toUpperCase().includes("QTY"));
+          let qty = qtyKey ? String(item[qtyKey] || "").trim() : "0";
 
-        if (loc.length >= 9) {
-          let grp = parseInt(loc.substring(0, 2), 10); 
-          let col = parseInt(loc.substring(4, 7), 10); 
-          let lvl = parseInt(loc.substring(7, 9), 10);
-          if (!isNaN(grp) && !isNaN(col) && !isNaN(lvl)) { 
-            let key = `${grp}-${col}-${lvl}`;
-            if (!restockLocs.has(key)) restockLocs.set(key, new Set());
-            if (pallet !== "" && pallet !== "-") {
-                restockLocs.get(key).add(JSON.stringify({ pallet: pallet, task: task, batch: batch, qty: qty }));
+          if (loc.length >= 9) {
+            let grp = parseInt(loc.substring(0, 2), 10); 
+            let col = parseInt(loc.substring(4, 7), 10); 
+            let lvl = parseInt(loc.substring(7, 9), 10);
+            if (!isNaN(grp) && !isNaN(col) && !isNaN(lvl)) { 
+              let key = `${grp}-${col}-${lvl}`;
+              if (!restockLocs.has(key)) restockLocs.set(key, new Set());
+              if (pallet !== "" && pallet !== "-") {
+                  restockLocs.get(key).add(JSON.stringify({ pallet: pallet, task: task, batch: batch, qty: qty }));
+              }
+              parsedCount++; 
             }
-            parsedCount++; 
           }
-        }
       });
       
       window.restockLocsCache = new Map();
@@ -1627,10 +1650,9 @@
             let isRestockTarget = restockLocs.has(targetKey);
             let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
 
-            let bay = Math.ceil(col / 3);
-            let originalLoc = `${String(currentRowGroupStr).padStart(2, '0')}${String(bay).padStart(2, '0')}${String(col).padStart(3, '0')}${String(lvl).padStart(2, '0')}`;
+            let bayStr = window.getBayFor(currentRowGroupStr, col);
+            let originalLoc = `${String(currentRowGroupStr).padStart(2, '0')}${bayStr}${String(col).padStart(3, '0')}${String(lvl).padStart(2, '0')}`;
 
-            // 新邏輯：計算該儲位真實的棧板總數
             let invPalletCount = globalInventoryPalletMap.has(originalLoc) ? globalInventoryPalletMap.get(originalLoc).size : 0;
 
             if (invPalletCount === 0) { 
@@ -1651,7 +1673,7 @@
             
             let palletArr = isRestockTarget ? Array.from(restockLocs.get(targetKey)).map(str => JSON.parse(str)) : [];
             let encodedData = encodeURIComponent(JSON.stringify(palletArr));
-            let displayLoc = `${String(currentRowGroupStr).padStart(2, '0')}-${String(bay).padStart(2, '0')}-${String(col).padStart(3, '0')}-${String(lvl).padStart(2, '0')}`;
+            let displayLoc = `${String(currentRowGroupStr).padStart(2, '0')}-${bayStr}-${String(col).padStart(3, '0')}-${String(lvl).padStart(2, '0')}`;
             
             let clickAttr = `onclick="showPalletModal('${displayLoc}', '${originalLoc}', '${encodedData}')" style="cursor: pointer;" title="點擊查看庫位明細"`;
 
@@ -1749,7 +1771,7 @@
         }
 
         if (["CTNS", "CTNO", "CBM", "CBMO", "CAT"].includes(cln)) { tdStyle += ` font-size: 14px; font-weight: 700;`; }
-        else if (cln === "TIME") { tdStyle += ` font-size: 11px; color: var(--accent-cyan); font-weight: bold;`; }
+        else if (cln === "TIME") { tdStyle += ` font-size: 11px; color: var(--accent-cyan);`; }
         else if (cln === "PCS") { tdStyle += ` font-size: 14px; font-weight: 700; color: #fde047;`; }
 
         if (c === dateColKey) { if (isFirstRow || isNewDateGroup) { displayValue = `<span style="color: var(--accent-cyan); font-weight: bold;">${v}</span>`; } else { displayValue = `<span style="opacity: 0.2;">${v}</span>`; } }
@@ -1770,6 +1792,105 @@
   function renderUphData(res) {
     document.getElementById('totUphRows').textContent = res.rowCount||0;
     let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`; (res.data||[]).forEach(i => { h+=`<tr>`; (res.headers || []).forEach(c => { let v = i[c] !== undefined ? i[c] : ""; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td>${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`; document.getElementById('uphSummaryBox').style.display = "flex"; document.getElementById('uphTableContainer').innerHTML = h;
+  }
+
+  let globalGohData = [];
+  let activeGohFilter = 'ALL';
+
+  function loadGohDataList() {
+    let timer = startLoadingMsg('gohMsgArea', 'GOH INVENTORY');
+    window.google.script.run.withSuccessHandler((invRes) => {
+      stopLoadingMsg('gohMsgArea', timer);
+      const data = invRes || [];
+      
+      globalGohData = data.filter(item => {
+        const loc = String(item.LOCATION_ID || "").toUpperCase();
+        return /T\d+/.test(loc) && loc !== "TRANST001";
+      });
+
+      const uniqueLocs = Array.from(new Set(globalGohData.map(i => String(i.LOCATION_ID || "").toUpperCase()))).sort();
+      
+      const filterGroup = document.getElementById('gohFilterGroup');
+      
+      // 改用 CSS Grid 實現統一大小且自動換行的精美按鈕矩陣
+      filterGroup.style.display = "grid";
+      filterGroup.style.gridTemplateColumns = "repeat(auto-fill, minmax(75px, 1fr))";
+      filterGroup.style.gap = "6px";
+
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 8px 4px; font-size: 14px !important; justify-content: center; text-align: center;">ALL</button>`;
+      uniqueLocs.forEach(loc => {
+          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 8px 4px; font-size: 14px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light);">${loc}</button>`;
+      });
+      filterGroup.innerHTML = fHtml;
+
+      activeGohFilter = 'ALL';
+      renderGohTable();
+
+    }).withFailureHandler(e => {
+      stopLoadingMsg('gohMsgArea', timer);
+      document.getElementById('gohMsgArea').textContent = "ERROR: " + e.message;
+    }).getAllInventoryData();
+  }
+
+  function filterGoh(loc) {
+      activeGohFilter = loc;
+      document.querySelectorAll('#gohFilterGroup .filter-btn-compact').forEach(btn => {
+          if (btn.getAttribute('data-loc') === loc) {
+              btn.classList.add('active');
+              btn.style.borderColor = 'var(--status-yellow)';
+          } else {
+              btn.classList.remove('active');
+              btn.style.borderColor = 'var(--border-light)';
+          }
+      });
+      renderGohTable();
+  }
+
+  function renderGohTable() {
+      let totRows = 0;
+      let totQty = 0;
+
+      // 更新欄位順序
+      let h = `<table class="compact-table"><thead><tr>
+        <th>LOC</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>Size</th><th>SKU</th><th>RECEIPT</th>
+      </tr></thead><tbody>`;
+
+      globalGohData.forEach(i => {
+        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
+        if (activeGohFilter !== 'ALL' && loc !== activeGohFilter) return;
+
+        let receipt = i["RECEIPT_ID"] || i["Receipt Dstamp"] || "";
+        let tag = i["TAG_ID"] || "";
+        let sku = i["SKU_ID"] || "";
+        let size = i["SKU Size"] || i["Size"] || "";
+        let barcode = i["SUPPLIER_SKU_ID"] || "";
+        let coo = i["User Def Type 1"] || "";
+        let qty = parseFloat(i["QTY_ON_HAND"]) || 0;
+        
+        totRows++;
+        totQty += qty;
+
+        let displayQty = qty;
+        if (qty === 0) displayQty = "";
+
+        h += `<tr>
+          <td>${loc}</td>
+          <td style="color:var(--accent-cyan); font-size:16px;">${barcode}</td>
+          <td style="color:var(--status-green); font-weight:700; font-size:18px;">${displayQty}</td>
+          <td style="color:var(--status-yellow); font-size:14px;">${tag}</td>
+          <td>${coo}</td>
+          <td>${size}</td>
+          <td>${sku}</td>
+          <td style="font-size:11px; color:var(--text-muted);">${receipt}</td>
+        </tr>`;
+      });
+      h += `</tbody></table>`;
+
+      if (document.getElementById('totGohRows')) document.getElementById('totGohRows').textContent = totRows;
+      if (document.getElementById('totGohQty')) document.getElementById('totGohQty').textContent = totQty;
+
+      document.getElementById('gohSummaryBox').style.display = "flex";
+      document.getElementById('gohTableContainer').innerHTML = h;
   }
 
   function startAuditSession() {
