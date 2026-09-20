@@ -176,9 +176,9 @@
     #listView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
     #listView .compact-table td { padding: 8px 10px; }
     
-    #gohView .compact-table { font-size: 16px !important; }
-    #gohView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
-    #gohView .compact-table td { padding: 8px 10px; }
+    #gohView .compact-table, #stView .compact-table { font-size: 16px !important; }
+    #gohView .compact-table th, #stView .compact-table th { font-size: 12px !important; padding: 8px 10px; }
+    #gohView .compact-table td, #stView .compact-table td { padding: 8px 10px; }
 
     .map-table th, .map-table td {
       min-width: 24px; height: 24px; padding: 1px; font-size: 13px; text-align: center;
@@ -316,7 +316,7 @@
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
     <!-- 手機觸控友善的 God Mode 點擊觸發區 -->
-    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10;" onclick="handleGodModeClick()"></div>
+    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10; touch-action: manipulation;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -636,6 +636,20 @@
     <div class="compact-table-wrapper"><div id="gohTableContainer"></div></div>
   </div>
 
+  <!-- ST View -->
+  <div id="stView" class="view-section" style="display: none;">
+    <div id="stMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="stSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totStRows">0</span></div>
+      <div class="summary-item-compact">PL:<span id="totStQty" style="color:var(--status-green);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadStDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div id="stFilterGroup" style="display: none; margin-bottom: 4px;"></div>
+    <div class="compact-table-wrapper"><div id="stTableContainer"></div></div>
+  </div>
+
 </div>
 
 <script>
@@ -729,13 +743,13 @@
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
         let authList = []; let authHeaders = [];
-        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "GOH", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
-        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
+        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
+        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
 
         const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
         
-        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph", "GOH": "goh" };
+        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph", "GOH": "goh", "ST": "st" };
         let permissions = [];
         
         authHeaders.forEach(key => {
@@ -917,7 +931,7 @@
   }
 
   function activateGodMode() {
-    const orderedPerms = ['rec', 'gao', 'lp', 'goh', 'uph', 'list', 'map', 'orderStatus', 'search', 'audit', 'db'];
+    const orderedPerms = ['rec', 'gao', 'lp', 'goh', 'st', 'uph', 'list', 'map', 'orderStatus', 'search', 'audit', 'db'];
     applyPermissions({ success: true, name: "Dev Admin", permissions: orderedPerms });
   }
 
@@ -949,7 +963,7 @@
     "search": { label: "查詢", icon: "ph-magnifying-glass" }, "list": { label: "補貨", icon: "ph-recycle" }, "audit": { label: "盤點", icon: "ph-clipboard-text" },
     "orderStatus": { label: "訂單", icon: "ph-package" }, "gao": { label: "DI", icon: "ph-truck" }, "rec": { label: "REC", icon: "ph-target" },
     "db": { label: "DB", icon: "ph-database" }, "map": { label: "MAP", icon: "ph-map-trifold" }, "lp": { label: "LP", icon: "ph-list-numbers" }, "uph": { label: "UPH", icon: "ph-trend-up" },
-    "goh": { label: "GOH", icon: "ph-t-shirt" }
+    "goh": { label: "GOH", icon: "ph-t-shirt" }, "st": { label: "ST", icon: "ph-archive-box" }
   };
 
   function applyPermissions(authData) {
@@ -976,6 +990,8 @@
   }
 
   let html5QrCode = null; let barcodeHtml5QrCode = null; let pendingBarcode = null; let lastDetected = null;
+  
+  let isStHideEmpty = true;
 
   function startLocationScanner() {
     const r = document.getElementById('reader'); const btn = document.getElementById('stopScanLocBtn');
@@ -1112,6 +1128,7 @@
     else if (tab === 'lp') loadLoadplanData(); 
     else if (tab === 'uph') loadUphData();     
     else if (tab === 'goh') loadGohDataList();
+    else if (tab === 'st') loadStDataList();
   }
 
   function fetchData() {
@@ -1267,7 +1284,27 @@
       if(!isT && soKey && i[soKey] && i[soKey] !== "-") { tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal; if (pcValue.includes("GOH")) pGoh += pcsVal; else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal; else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal; else if (genderValue.includes("BDW")) pBdw += pcsVal; else pOth += pcsVal; }
       
       h+=`<tr class="${isT ? 'gao-total-row' : ('gao-data-row ' + categoryClass)}">`;
-      (res.headers || []).forEach((c, colIndex) => { let v = i[c] !== undefined ? i[c] : ""; const cln = c ? c.toString().trim().toUpperCase() : ""; let cls = ""; const vOriginal = String(v).trim(); if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday"; else if (cln === "SCND") cls = "text-green"; else if (cln === "-SCN") { cls = "text-red"; if(v && v !== "0" && v !== "-" && !String(v).startsWith("-")) v = "-" + v; } if (c === soKey && isPlanN && !isT) cls += " highlight-alert"; let tdStyle = ""; if (vOriginal === "0" || vOriginal === "0.0") { cls = ""; tdStyle = "color: rgba(255, 255, 255, 0.1) !important;"; } else if (!isT && specialStyle !== "" && targetColorColumns.includes(cln)) tdStyle = specialStyle; h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`; }); h+=`</tr>`;
+      (res.headers || []).forEach((c, colIndex) => { 
+        let v = i[c] !== undefined ? i[c] : ""; 
+        const cln = c ? c.toString().trim().toUpperCase() : ""; 
+        let cls = ""; 
+        const vOriginal = String(v).trim(); 
+        
+        if (colIndex === 0 && vOriginal.includes("週一") && !isT) cls = "highlight-monday"; 
+        else if (cln === "SCND") cls = "text-green"; 
+        else if (cln === "-SCN") { cls = "text-red"; if(v && v !== "0" && v !== "-" && !String(v).startsWith("-")) v = "-" + v; } 
+        if (c === soKey && isPlanN && !isT) cls += " highlight-alert"; 
+        
+        let tdStyle = ""; 
+        if (vOriginal === "0" || vOriginal === "0.0") { cls = ""; tdStyle = "color: rgba(255, 255, 255, 0.1) !important;"; } 
+        else if (!isT && specialStyle !== "" && targetColorColumns.includes(cln)) tdStyle = specialStyle; 
+        
+        if (c === soKey && !isT) { v = String(v).replace(/^GAO-/i, ''); }
+        if (isT && colIndex === 0) { v = String(v).replace(/\s*Total/ig, ''); }
+
+        h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`; 
+      }); 
+      h+=`</tr>`;
     }); h+=`</tbody></table>`;
     
     if(document.getElementById('totGaoCbm')) document.getElementById('totGaoCbm').textContent = Number.isInteger(tCbm)?tCbm:tCbm.toFixed(1); 
@@ -1341,6 +1378,7 @@
       (res.data||[]).forEach((i, rowIdx) => {
           let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : "";
           let specialStyle = "";
+          
           if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;";
           else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;";
           else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;";
@@ -1362,20 +1400,29 @@
               if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); }
               else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-" + v; }
 
-              // 將專屬顏色套用到 SO 和 CAT 欄位
-              if ((c === soKey || cln === "CAT") && specialStyle !== "") inlineStyle = specialStyle;
+              if (cln === "CAT" && specialStyle !== "") inlineStyle = specialStyle;
 
               if (v === 0 || String(v).trim() === "0") v = "";
 
               let displayV = v;
               if ((c === soKey || cln === "SO") && v !== "" && v !== "-") {
-                  if (inlineStyle !== "") {
-                      // 擷取色碼來畫虛線底線
-                      let extractedColor = specialStyle.match(/color:(.*?);/)[1];
-                      displayV = `<span style="cursor:pointer; border-bottom:1px dashed ${extractedColor}; ${specialStyle}" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+                  let shortDisplay = String(v).replace(/^GAO-/i, '');
+                  
+                  if (specialStyle !== "") {
+                      inlineStyle = specialStyle;
                   } else {
-                      displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan); color:var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+                      if (String(v).toUpperCase().includes("SS")) {
+                          inlineStyle = "color:#fde047; font-weight:700;"; 
+                      } else {
+                          inlineStyle = "color:#6ee7b7; font-weight:700;"; 
+                      }
                   }
+                  
+                  let extractedColor = "var(--accent-cyan)";
+                  let colorMatch = inlineStyle.match(/color:\s*(.*?);/);
+                  if (colorMatch) extractedColor = colorMatch[1];
+
+                  displayV = `<span style="cursor:pointer; border-bottom:1px dashed ${extractedColor};" onclick="openRecQrModal(${currentRowIdx})">${shortDisplay}</span>`;
               }
 
               h+=`<td class="${cls}" style="${inlineStyle}">${displayV}</td>`;
@@ -2088,56 +2135,175 @@
       document.getElementById('gohTableContainer').innerHTML = h;
   }
 
-  function startAuditSession() {
-    const loc = document.getElementById('auditLocInput').value.trim().toUpperCase(); if (!loc) return;
-    const b = document.getElementById('auditLoadBtn'); const msg = document.getElementById('auditMsgArea');
-    b.disabled = true; b.innerHTML = '<i class="ph ph-spinner ph-spin"></i>'; 
-    document.getElementById('feedbackTitle').innerHTML = '<i class="ph ph-barcode"></i> AWAITING SCAN...'; document.getElementById('feedbackDetails').innerHTML = 'SYS: 0 | SCN: 0';
-    let timer = startLoadingMsg('auditMsgArea', 'AUDIT DATA');
+  let globalStData = [];
+  let activeStFilter = 'ALL';
 
-    window.google.script.run.withSuccessHandler((res) => {
-      stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>';
-      if (!res || !res.data || res.data.length === 0) { msg.textContent = `⚠️ NO LOC RECORD (${loc}) - BLIND MODE`; msg.style.color="var(--status-yellow)"; }
-      auditState = { location: loc, systemItemsMap: {}, scannedCounts: {}, scanHistoryStack: [], lastRawCodeMap: {}, lastLookupCodeMap: {}, activeFilter: 'all', lastScannedKey: null };
-      if (res && res.data) { res.data.forEach(item => { const key = (item["TAG_ID"] || item["SUPPLIER_SKU_ID"] || item["SKU_ID"] || "UNKNOWN").toString().trim().toUpperCase(); if (!auditState.systemItemsMap[key]) { auditState.systemItemsMap[key] = { key: key, sysQty: 0, tag: item["TAG_ID"]||"-", sku: item["SKU_ID"]||"-", barcode: item["SUPPLIER_SKU_ID"]||"-", style: item["Style"]||"-", size: item["Size"]||"-", palletId: item["Pallet ID"]||"-", loc: item["LOCATION_ID"]||loc }; } auditState.systemItemsMap[key].sysQty += (parseFloat(item["QTY_ON_HAND"]) || 0); }); }
-      document.getElementById('auditScanSection').style.display = 'block'; document.getElementById('auditSummaryBox').style.display = 'flex'; document.getElementById('auditFilterGroup').style.display = 'flex'; document.getElementById('auditScanInput').focus(); renderAuditComparison();
-    }).withFailureHandler((e) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; b.innerHTML = '<i class="ph ph-magnifying-glass"></i>'; msg.textContent = "LOAD ERROR: " + e.message; }).searchLocation(loc);
+  function toggleStEmptyFilter() {
+      isStHideEmpty = !isStHideEmpty;
+      const btn = document.getElementById('btnToggleStEmpty');
+      if(isStHideEmpty) {
+          btn.classList.add('active');
+          btn.style.color = 'var(--status-yellow)';
+          btn.style.borderColor = 'var(--status-yellow)';
+          btn.innerHTML = '<i class="ph ph-eye-slash"></i>';
+      } else {
+          btn.classList.remove('active');
+          btn.style.color = 'var(--text-muted)';
+          btn.style.borderColor = 'var(--border-light)';
+          btn.innerHTML = '<i class="ph ph-eye"></i>';
+      }
+      applyStEmptyVisibility();
   }
 
-  function handleAuditScan(e) { if (e.key === 'Enter') { e.preventDefault(); const i = document.getElementById('auditScanInput'); let v = i.value.trim().toUpperCase(); if (!v) return; processScannedCode(v); i.value = ""; i.focus(); } }
-  function processScannedCode(rawScanned) { const lk = rawScanned.length > 13 ? rawScanned.substring(0, 13) : rawScanned; let tk = null; const mKeys = Object.keys(auditState.systemItemsMap).filter(k => { const i = auditState.systemItemsMap[k]; return (i.barcode && (i.barcode===lk||i.barcode===rawScanned)) || (i.sku && (i.sku===lk||i.sku===rawScanned)); }); if (mKeys.length > 0) { const uk = mKeys.find(k => (auditState.scannedCounts[k]||0) < auditState.systemItemsMap[k].sysQty); tk = uk ? uk : mKeys[0]; } if (!tk) tk = lk; processAuditItem(tk, rawScanned, lk); }
-  function processAuditItem(tk, raw, lk) { auditState.lastRawCodeMap[tk] = raw; auditState.lastLookupCodeMap[tk] = lk; auditState.scannedCounts[tk] = (auditState.scannedCounts[tk]||0) + 1; auditState.lastScannedKey = tk; auditState.scanHistoryStack.push({ targetKey: tk, rawScanned: raw, lookupCode: lk }); const c = auditState.scannedCounts[tk]; const s = auditState.systemItemsMap[tk]; const sq = s ? s.sysQty : 0; const isE = c > sq; if (isE) { playScanSound('extra'); triggerVibration([80, 50, 80]); } else { playScanSound('match'); triggerVibration(60); } showScanFeedbackBanner(tk, raw, c, sq, isE, s, false); renderAuditComparison(); }
-  function showScanFeedbackBanner(tk, raw, c, sq, isE, s, isUndo) { const b = document.getElementById('scanFeedbackBanner'); b.style.borderColor = isUndo ? 'var(--status-red)' : (isE ? 'var(--status-yellow)' : 'var(--status-green)'); const t = isUndo ? '⛔ REMOVED (-1)' : (isE ? '🟡 EXTRA (+1)' : '✅ MATCH (+1)'); document.getElementById('feedbackTitle').innerHTML = `<span style="color:${b.style.borderColor}">${t} (${raw})</span>`; document.getElementById('feedbackDetails').innerHTML = `SYS:<span style="color:#fff;font-family:'Roboto Mono'; margin-right:6px;">${sq}</span>SCN:<span style="color:${b.style.borderColor};font-family:'Roboto Mono';">${c}</span>`; }
-  function undoLastScan() { if (auditState.scanHistoryStack.length === 0) return; const l = auditState.scanHistoryStack.pop(); if (auditState.scannedCounts[l.targetKey] > 0) auditState.scannedCounts[l.targetKey]--; auditState.lastScannedKey = auditState.scanHistoryStack.length > 0 ? auditState.scanHistoryStack[auditState.scanHistoryStack.length-1].targetKey : null; playScanSound('undo'); triggerVibration([60, 40, 60]); const s = auditState.systemItemsMap[l.targetKey]; showScanFeedbackBanner(l.targetKey, l.rawScanned, auditState.scannedCounts[l.targetKey]||0, s ? s.sysQty : 0, false, s, true); renderAuditComparison(); }
-
-  function openSyncConfirmModal() { if (!auditState.location) { document.getElementById('auditMsgArea').textContent = "SELECT LOC FIRST"; return; } document.getElementById('modalSysQty').textContent = document.getElementById('auditSysQty').textContent; document.getElementById('modalScannedQty').textContent = document.getElementById('auditScannedQty').textContent; document.getElementById('modalMissingQty').textContent = document.getElementById('auditMissingQty').textContent; document.getElementById('modalExtraQty').textContent = document.getElementById('auditExtraQty').textContent; document.getElementById('syncConfirmModal').style.display = 'flex'; }
-  function closeSyncModal() { document.getElementById('syncConfirmModal').style.display = 'none'; }
-  function confirmFinishAuditSync() { closeSyncModal(); finishAuditSync(); }
-  
-  function finishAuditSync() {
-    const b = document.getElementById('finishSyncConfirmBtn'); b.disabled = true; let timer = startLoadingMsg('auditMsgArea', 'SYNCING CLOUD');
-    const diffs = []; let ts = 0, tc = 0; new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => { const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: "", sku: "-", barcode: "-", style: "-", size: "-", palletId: "-" }; const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c; if (d !== 0) diffs.push({ key: k, tagId: s.tag!=="-"?s.tag:"", palletId: s.palletId||"-", rawScannedCode: auditState.lastRawCodeMap[k]||"", lookupCode: s.barcode!=="-"?s.barcode:k, sku: s.sku, style: s.style, size: s.size, sysQty: s.sysQty, scannedQty: c, diff: d }); });
-    window.google.script.run.withSuccessHandler((r) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-green)"; msg.textContent = r.message; }).withFailureHandler((e) => { stopLoadingMsg('auditMsgArea', timer); b.disabled = false; const msg = document.getElementById('auditMsgArea'); msg.style.color = "var(--status-red)"; msg.textContent = "ERROR: " + e.message; playScanSound('error'); }).saveAuditRecord({ location: auditState.location, totalSysQty: ts, totalScannedQty: tc, hasDiff: diffs.length > 0, items: diffs });
+  function applyStEmptyVisibility() {
+      const btns = document.querySelectorAll('#stFilterGroup .st-loc-btn');
+      btns.forEach(btn => {
+          if (btn.innerText.includes('(0)')) {
+              btn.style.display = isStHideEmpty ? 'none' : 'flex';
+          }
+      });
   }
 
-  function resetAuditSession() { document.getElementById('resetConfirmModal').style.display = 'flex'; }
-  function closeResetModal() { document.getElementById('resetConfirmModal').style.display = 'none'; }
-  function confirmResetAuditSession() { closeResetModal(); auditState.scannedCounts = {}; auditState.scanHistoryStack = []; document.getElementById('scanFeedbackBanner').style.borderColor='var(--border-light)'; document.getElementById('feedbackTitle').innerHTML = '<i class="ph ph-barcode"></i> AWAITING SCAN...'; document.getElementById('feedbackDetails').innerHTML = 'SYS: 0 | SCN: 0'; renderAuditComparison(); }
-  function filterAuditResult(t) { auditState.activeFilter = t; document.querySelectorAll('.filter-btn-compact').forEach(b => b.classList.remove('active')); document.getElementById('filter' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); renderAuditComparison(); }
+  function loadStDataList() {
+    let timer = startLoadingMsg('stMsgArea', 'ST INVENTORY');
+    window.google.script.run.withSuccessHandler((invRes) => {
+      stopLoadingMsg('stMsgArea', timer);
+      const data = invRes || [];
+      
+      globalStData = data.filter(item => {
+        const loc = String(item.LOCATION_ID || "").toUpperCase();
+        return loc.startsWith("ST");
+      });
 
-  function renderAuditComparison() {
-    const cont = document.getElementById('auditResultContainer'); cont.innerHTML = ""; let ts=0, tc=0, mc=0, ec=0, mic=0, eic=0, mac=0; const plSet = new Set(), tagSet = new Set(), locSet = new Set(); const items = [];
-    new Set([...Object.keys(auditState.systemItemsMap), ...Object.keys(auditState.scannedCounts)]).forEach(k => { const s = auditState.systemItemsMap[k] || { key: k, sysQty: 0, tag: k, sku: "-", barcode: "-", style: "-", size: "-", palletId: "-", loc: auditState.location }; const c = auditState.scannedCounts[k] || 0, d = c - s.sysQty; ts += s.sysQty; tc += c; if (s.palletId && s.palletId !== "-") plSet.add(s.palletId); if (s.tag && s.tag !== "-") tagSet.add(s.tag); if (s.loc && s.loc !== "-") locSet.add(s.loc); let st = 'match'; if (d < 0) { st = 'missing'; mc += Math.abs(d); mic++; } else if (d > 0) { st = 'extra'; ec += d; eic++; } else mac++; items.push({ ...s, scannedQty: c, diff: d, status: st }); });
-    document.getElementById('auditSysPlc').textContent = plSet.size; document.getElementById('auditSysTag').textContent = tagSet.size; document.getElementById('auditSysLoc').textContent = locSet.size; document.getElementById('auditSysQty').textContent = ts; document.getElementById('auditScannedQty').textContent = tc; document.getElementById('auditMissingQty').textContent = mc; document.getElementById('auditExtraQty').textContent = ec;
-    document.getElementById('fAll').textContent = `(${items.length})`; document.getElementById('fMis').textContent = `(${mic})`; document.getElementById('fExt').textContent = `(${eic})`; document.getElementById('fMat').textContent = `(${mac})`;
-    const filtered = items.filter(i => auditState.activeFilter === 'all' || i.status === auditState.activeFilter); if (filtered.length === 0) { cont.innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:12px;">NO RECORD FOUND</div>`; return; }
-    let h = `<div class="compact-table-wrapper"><table class="compact-table"><thead><tr><th style="width:30px;">+</th><th>SYS</th><th>SCN</th><th>PL</th><th>Barcode</th><th>TAG</th><th>LOC</th><th>Style</th><th>Sz</th><th>SKU</th></tr></thead><tbody>`;
-    filtered.forEach(i => {
-      const isL = (i.key === auditState.lastScannedKey); const rCls = isL ? 'last-scanned-highlight' : ''; let bLeft = i.status === 'missing' ? 'var(--status-red)' : (i.status === 'extra' ? 'var(--status-yellow)' : 'var(--status-green)'); let sColor = i.scannedQty > i.sysQty ? 'var(--status-yellow)' : (i.scannedQty === 0 ? 'var(--text-muted)' : 'var(--status-green)');
-      let plStr = i.palletId !== "-" ? String(i.palletId).trim() : ""; let plTail = plStr.length >= 5 ? plStr.slice(-5) : ""; let tagStr = i.tag !== "-" ? String(i.tag).trim() : ""; let tagTarget = tagStr.length >= 10 ? tagStr.slice(-10, -5) : ""; let plDisplay = plStr; let tagDisplay = tagStr;
-      if (plTail !== "" && tagTarget !== "" && plTail === tagTarget) { let plPrefix = plStr.slice(0, -5); plDisplay = `<span style="color:var(--text-muted);">${plPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${plTail}</span>`; let tagPrefix = tagStr.slice(0, -10); let tagSuffix = tagStr.slice(-5); tagDisplay = `<span style="color:var(--text-muted);">${tagPrefix}</span><span style="color:var(--status-yellow); font-weight:700; text-shadow:0 0 5px rgba(251,191,36,0.5);">${tagTarget}</span><span style="color:var(--text-muted);">${tagSuffix}</span>`; } else { plDisplay = `<span style="color:var(--text-muted);">${plStr}</span>`; tagDisplay = `<span style="color:var(--text-muted);">${tagStr}</span>`; }
-      h += `<tr class="${rCls}"><td style="border-left: 3px solid ${bLeft};"><button class="icon-btn" style="min-width:24px; height:24px;" onclick="incrementAuditItem('${i.key}')"><i class="ph ph-plus" style="font-size:12px;"></i></button></td><td style="color:var(--text-muted);">${i.sysQty}</td><td style="color:${sColor}; font-size:14px; font-weight:700;">${i.scannedQty}</td><td>${plDisplay}</td><td style="color:var(--accent-cyan); font-size:11px;">${i.barcode!=="-"?i.barcode:""}</td><td style="text-align:left; font-size:11px;">${tagDisplay}</td><td style="color:var(--text-muted);">${auditState.location}</td><td>${i.style}</td><td>${i.size}</td><td>${i.sku}</td></tr>`;
-    }); h += `</tbody></table></div>`; cont.innerHTML = h;
+      const locPalletMap = new Map();
+      const totalStPallets = new Set();
+      
+      globalStData.forEach(item => {
+          const loc = String(item.LOCATION_ID || "").toUpperCase();
+          const pallet = String(item["Pallet ID"] || "").trim();
+          
+          if (!locPalletMap.has(loc)) locPalletMap.set(loc, new Set());
+          
+          if (pallet && pallet !== "-") {
+              locPalletMap.get(loc).add(pallet);
+              totalStPallets.add(pallet);
+          }
+      });
+
+      const uniqueLocs = Array.from(locPalletMap.keys()).sort();
+      
+      const filterGroup = document.getElementById('stFilterGroup');
+      filterGroup.style.display = "flex";
+      filterGroup.style.flexWrap = "wrap";
+      filterGroup.style.gap = "4px";
+      filterGroup.style.marginBottom = "4px";
+
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterSt('ALL')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalStPallets.size})</span></button>`;
+      
+      let eyeIcon = isStHideEmpty ? '<i class="ph ph-eye-slash"></i>' : '<i class="ph ph-eye"></i>';
+      let eyeStyle = isStHideEmpty ? 'color:var(--status-yellow); border-color:var(--status-yellow);' : 'color:var(--text-muted); border-color:var(--border-light);';
+      let eyeClass = isStHideEmpty ? 'filter-btn-compact active' : 'filter-btn-compact';
+      fHtml += `<button id="btnToggleStEmpty" class="${eyeClass}" onclick="toggleStEmptyFilter()" style="padding: 4px 8px; font-size: 14px !important; justify-content: center; text-align: center; border-radius:4px; ${eyeStyle}">${eyeIcon}</button>`;
+      
+      uniqueLocs.forEach(loc => {
+          let palletCount = locPalletMap.get(loc).size;
+          let displayLoc = loc.replace(/STAGE/ig, "ST");
+          fHtml += `<button class="filter-btn-compact st-loc-btn" data-loc="${loc}" onclick="filterSt('${loc}')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${displayLoc} <span style="color:var(--text-muted); font-size:10px;">(${palletCount})</span></button>`;
+      });
+      filterGroup.innerHTML = fHtml;
+
+      activeStFilter = 'ALL';
+      renderStTable();
+      applyStEmptyVisibility();
+
+    }).withFailureHandler(e => {
+      stopLoadingMsg('stMsgArea', timer);
+      document.getElementById('stMsgArea').textContent = "ERROR: " + e.message;
+    }).getAllInventoryData();
+  }
+
+  function filterSt(loc) {
+      activeStFilter = loc;
+      document.querySelectorAll('#stFilterGroup .filter-btn-compact').forEach(btn => {
+          if (btn.getAttribute('data-loc') === loc) {
+              btn.classList.add('active');
+              btn.style.borderColor = 'var(--status-yellow)';
+          } else {
+              btn.classList.remove('active');
+              btn.style.borderColor = 'var(--border-light)';
+          }
+      });
+      renderStTable();
+  }
+
+  function renderStTable() {
+      let totRows = 0;
+      const tablePallets = new Set();
+
+      let h = `<table class="compact-table"><thead><tr>
+        <th>LOC</th><th>PL</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
+      </tr></thead><tbody>`;
+
+      globalStData.forEach(i => {
+        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
+        if (activeStFilter !== 'ALL' && loc !== activeStFilter) return;
+
+        let tag = i["TAG_ID"] || "";
+        let coo = i["User Def Type 1"] || "";
+        let pallet = i["Pallet ID"] || "";
+        
+        let receipt = "";
+        let size = "";
+        let barcode = "";
+        let qty = 0;
+        
+        Object.keys(i).forEach(k => {
+            let kl = k.toUpperCase();
+            if (kl === "RECEIPT_ID") { receipt = i[k]; }
+        });
+        
+        if (!receipt) {
+            Object.keys(i).forEach(k => {
+                let kl = k.toUpperCase();
+                if (kl === "RECEIPT" || kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP") receipt = i[k];
+            });
+        }
+        
+        Object.keys(i).forEach(k => {
+            let kl = k.toUpperCase();
+            if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
+            if (kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(i[k]) || 0;
+            if (kl === "SKU SIZE" || kl === "SIZE") size = i[k];
+        });
+        
+        totRows++;
+        if (pallet && pallet !== "-") {
+            tablePallets.add(pallet);
+        }
+
+        let displayQty = qty;
+        if (qty === 0) displayQty = "";
+        
+        let displayLoc = loc.replace(/STAGE/ig, "ST");
+
+        h += `<tr>
+          <td>${displayLoc}</td>
+          <td style="font-family:'Roboto Mono', monospace;">${formatDbPalletStr(pallet)}</td>
+          <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
+          <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
+          <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
+          <td>${coo}</td>
+          <td>${size}</td>
+          <td style="font-size:12px; color:var(--text-main);">${receipt}</td>
+        </tr>`;
+      });
+      h += `</tbody></table>`;
+
+      if (document.getElementById('totStRows')) document.getElementById('totStRows').textContent = totRows;
+      if (document.getElementById('totStQty')) document.getElementById('totStQty').textContent = tablePallets.size;
+
+      document.getElementById('stSummaryBox').style.display = "flex";
+      document.getElementById('stTableContainer').innerHTML = h;
   }
 </script>
 </body>
