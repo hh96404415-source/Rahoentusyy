@@ -315,8 +315,8 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <!-- 手機與電腦觸控的 God Mode 點擊觸發區 -->
-    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 80px; height: 80px; cursor: pointer; z-index: 10;" onclick="handleGodModeClick()"></div>
+    <!-- 手機觸控友善的 God Mode 點擊觸發區 -->
+    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -336,7 +336,6 @@
 
 <div id="recQrModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeRecQrModal(event)">
   <div class="glass-box" style="border-color: var(--accent-blue); max-width: 340px; display:flex; flex-direction:column; gap:12px; padding: 16px;" onclick="event.stopPropagation();">
-    
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
         <div class="d-pad-btn" style="width:36px; height:36px;" onclick="navigateRecQrModal('up')" title="上一筆"><i class="ph ph-caret-up"></i></div>
         <div style="text-align:center; flex:1; overflow:hidden;">
@@ -345,11 +344,9 @@
         </div>
         <div class="d-pad-btn" style="width:36px; height:36px;" onclick="navigateRecQrModal('down')" title="下一筆"><i class="ph ph-caret-down"></i></div>
     </div>
-    
     <div style="background: #fff; padding: 12px; border-radius: 8px; align-self: center; display: inline-block;">
         <div id="recQrCodeContainer"></div>
     </div>
-    
     <button class="primary-btn" style="width: 100%; padding:10px;" onclick="closeRecQrModal()">CLOSE</button>
   </div>
 </div>
@@ -383,21 +380,17 @@
 
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
   <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column; padding: 14px;" onclick="event.stopPropagation();">
-    
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-      
       <div class="d-pad-container" style="flex-shrink: 0;">
         <div class="d-pad-btn btn-up" onclick="navigatePalletModal('up')" title="往上 (層數+1)"><i class="ph ph-caret-up"></i></div>
         <div class="d-pad-btn btn-left" onclick="navigatePalletModal('left')" title="往左 (列數-1)"><i class="ph ph-caret-left"></i></div>
         <div class="d-pad-btn btn-right" onclick="navigatePalletModal('right')" title="往右 (列數+1)"><i class="ph ph-caret-right"></i></div>
         <div class="d-pad-btn btn-down" onclick="navigatePalletModal('down')" title="往下 (層數-1)"><i class="ph ph-caret-down"></i></div>
       </div>
-
       <div style="display: flex; align-items: center; justify-content: flex-end; flex: 1; overflow: hidden; padding-left: 8px;">
         <div id="palletModalSubtitle" style="color: var(--accent-cyan); font-size: 25px; font-weight: 700; font-family: 'Roboto Mono', monospace; white-space: nowrap; text-shadow: 0 0 12px rgba(56,189,248,0.5); letter-spacing: -1px;">--</div>
       </div>
     </div>
-    
     <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 11px; font-family: 'Roboto Mono', monospace; text-align: left;">
       <div style="color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">
         <span id="previewSearchStatus" style="color: var(--accent-cyan); font-family: 'Roboto Mono', monospace;">...</span>
@@ -405,7 +398,6 @@
       </div>
       <div id="previewSearchContent" style="max-height: 220px; min-height: 220px; overflow-y: auto; background: transparent; border-radius: 4px; padding: 2px;"></div>
     </div>
-
     <div style="background: var(--bg-deep); border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; overflow-y: auto; flex: 1;">
       <div id="palletModalList" style="display: flex; flex-direction: column; gap: 8px; text-align: left;"></div>
     </div>
@@ -520,7 +512,6 @@
   <!-- Gao (DI) View -->
   <div id="gaoView" class="view-section" style="display: none;">
     <div id="gaoMsgArea" class="message"></div>
-    
     <div class="summary-box-compact" id="gaoSummaryBox" style="display: none;">
       <div class="summary-item-compact">ROWS:<span id="totGaoRows">0</span></div>
       <div class="summary-item-compact">CBM:<span id="totGaoCbm" style="color:var(--accent-blue);">0</span></div>
@@ -536,7 +527,6 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-
     <div id="gaoFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterGao('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="GOH" style="color:#d946ef;" onclick="filterGao('GOH')">GOH</button>
@@ -545,7 +535,6 @@
       <button class="filter-btn-compact" data-filter="BDW" style="color:#86efac;" onclick="filterGao('BDW')">BDW</button>
       <button class="filter-btn-compact" data-filter="OTH" style="color:var(--text-main);" onclick="filterGao('OTH')">OTH</button>
     </div>
-
     <div class="compact-table-wrapper"><div id="gaoTableContainer"></div></div>
   </div>
 
@@ -581,7 +570,6 @@
   <!-- MAP View -->
   <div id="mapView" class="view-section" style="display: none;">
     <div id="mapMsgArea" class="message"></div>
-    
     <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
       <div class="summary-item-compact">EMPTY:<span id="mapTotEmpty">0</span></div>
       <div class="summary-item-compact">OCCUPY:<span id="mapTotOccupy" style="color:var(--status-yellow);">0</span></div>
@@ -592,7 +580,6 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-
     <div id="mapFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterMap('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="01" onclick="filterMap('01')">01</button>
@@ -605,7 +592,6 @@
       <button class="filter-btn-compact" data-filter="08" onclick="filterMap('08')">08</button>
       <button class="filter-btn-compact" data-filter="09" onclick="filterMap('09')">09</button>
     </div>
-
     <div id="mapBatchFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;"></div>
     <div class="compact-table-wrapper"><div id="mapTableContainer"></div></div>
   </div>
@@ -823,9 +809,9 @@
         return { 
           columns: r.columns || [], 
           data: listData, 
-          locsCount: locsSet.size || r.locsCount || 0, 
-          plCount: plSet.size || r.plCount || 0, 
-          totalAlQty: totalQty || r.totalAlQty || 0 
+          locsCount: locsSet.size, 
+          plCount: plSet.size, 
+          totalAlQty: totalQty 
         }; 
       })); 
     }
@@ -1331,69 +1317,77 @@
 
   let globalRecListForQr = [];
   let currentRecQrIdx = 0;
-  let recQrCodeObj = null;
-
+  
   function renderRecData(res) {
-    let tScnd=0, tScn=0; 
-    if(document.getElementById('totRecRows')) document.getElementById('totRecRows').textContent = res.rowCount||0;
-    
-    let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT"); 
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "SO" || h.toUpperCase().trim() === "S/O");
-    let recidKey = (res.headers || []).find(h => h.toUpperCase().trim() === "RECID" || h.toUpperCase().trim() === "RECEIPT_ID" || h.toUpperCase().trim() === "RECEIPT");
-    
-    globalRecListForQr = []; 
+      let tScnd=0, tScn=0;
+      if(document.getElementById('totRecRows')) document.getElementById('totRecRows').textContent = res.rowCount||0;
 
-    let h = `<table class="compact-table"><thead><tr>`; 
-    (res.headers || []).forEach(c => { 
-        if (c && String(c).toUpperCase().includes("UPD/")) { 
-            h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`; 
-        } else { 
-            h += `<th>${c}</th>`; 
-        } 
-    }); 
-    h+=`</tr></thead><tbody>`;
-    
-    (res.data||[]).forEach((i, rowIdx) => { 
-        let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : ""; 
-        let specialStyle = ""; 
-        if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;"; 
-        else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;"; 
-        else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;"; 
-        else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;"; 
-        
-        let soVal = soKey ? String(i[soKey] || "").trim() : "";
-        let recidVal = recidKey ? String(i[recidKey] || "").trim() : "";
-        if (!recidVal && soVal) recidVal = soVal;
-        
-        globalRecListForQr.push({ so: soVal, recid: recidVal });
-        let currentRowIdx = globalRecListForQr.length - 1;
+      let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT");
+      let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "SO" || h.toUpperCase().trim() === "S/O");
+      let recidKey = (res.headers || []).find(h => h.toUpperCase().trim() === "RECID" || h.toUpperCase().trim() === "RECEIPT_ID" || h.toUpperCase().trim() === "RECEIPT");
 
-        h+=`<tr>`; 
-        (res.headers || []).forEach(c => { 
-            let v = i[c] !== undefined ? i[c] : ""; 
-            const cln = c ? c.toString().trim().toUpperCase() : ""; 
-            let cls = ""; let inlineStyle = ""; 
-            
-            if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); } 
-            else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-" + v; } 
-            if (c === soKey && specialStyle !== "") inlineStyle = specialStyle; 
-            if (v === 0 || String(v).trim() === "0") v = ""; 
-            
-            let displayV = v;
-            if ((c === soKey || cln === "SO") && v !== "" && v !== "-") {
-                displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan); color:var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
-            }
-            
-            h+=`<td class="${cls}" style="${inlineStyle}">${displayV}</td>`; 
-        }); 
-        h+=`</tr>`; 
-    }); 
-    h+=`</tbody></table>`;
-    
-    if(document.getElementById('totRecScnd')) document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); 
-    if(document.getElementById('totRecScn')) document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); 
-    if(document.getElementById('recSummaryBox')) document.getElementById('recSummaryBox').style.display = "flex"; 
-    if(document.getElementById('recTableContainer')) document.getElementById('recTableContainer').innerHTML = h;
+      globalRecListForQr = [];
+
+      let h = `<table class="compact-table"><thead><tr>`;
+      (res.headers || []).forEach(c => {
+          if (c && String(c).toUpperCase().includes("UPD/")) {
+              h += `<th style="color:var(--accent-cyan); font-size:16px; font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(56,189,248,0.5);">${c}</th>`;
+          } else {
+              h += `<th>${c}</th>`;
+          }
+      });
+      h+=`</tr></thead><tbody>`;
+
+      (res.data||[]).forEach((i, rowIdx) => {
+          let catVal = catKey ? String(i[catKey] || "").trim().toUpperCase() : "";
+          let specialStyle = "";
+          if (catVal.includes("GOH")) specialStyle = "color:#d946ef; font-weight:700;";
+          else if (catVal.includes("FTW")) specialStyle = "color:#ff8c00; font-weight:700;";
+          else if (catVal.includes("ACC")) specialStyle = "color:#ff003c; font-weight:700;";
+          else if (catVal.includes("BDW")) specialStyle = "color:#86efac; font-weight:700;";
+
+          let soVal = soKey ? String(i[soKey] || "").trim() : "";
+          let recidVal = recidKey ? String(i[recidKey] || "").trim() : "";
+          if (!recidVal && soVal) recidVal = soVal;
+
+          globalRecListForQr.push({ so: soVal, recid: recidVal });
+          let currentRowIdx = globalRecListForQr.length - 1;
+
+          h+=`<tr>`;
+          (res.headers || []).forEach(c => {
+              let v = i[c] !== undefined ? i[c] : "";
+              const cln = c ? c.toString().trim().toUpperCase() : "";
+              let cls = ""; let inlineStyle = "";
+
+              if (cln === "SCND") { cls="text-green"; tScnd+=(parseFloat(v)||0); }
+              else if (cln === "-SCN") { cls="text-red"; tScn+=(parseFloat(String(v).replace(/^-/,''))||0); if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-" + v; }
+
+              // 將專屬顏色套用到 SO 和 CAT 欄位
+              if ((c === soKey || cln === "CAT") && specialStyle !== "") inlineStyle = specialStyle;
+
+              if (v === 0 || String(v).trim() === "0") v = "";
+
+              let displayV = v;
+              if ((c === soKey || cln === "SO") && v !== "" && v !== "-") {
+                  if (inlineStyle !== "") {
+                      // 擷取色碼來畫虛線底線
+                      let extractedColor = specialStyle.match(/color:(.*?);/)[1];
+                      displayV = `<span style="cursor:pointer; border-bottom:1px dashed ${extractedColor}; ${specialStyle}" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+                  } else {
+                      displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan); color:var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+                  }
+              }
+
+              h+=`<td class="${cls}" style="${inlineStyle}">${displayV}</td>`;
+          });
+          h+=`</tr>`;
+      });
+      h+=`</tbody></table>`;
+
+      if(document.getElementById('totRecScnd')) document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2);
+      if(document.getElementById('totRecScn')) document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2);
+      if(document.getElementById('recSummaryBox')) document.getElementById('recSummaryBox').style.display = "flex";
+      if(document.getElementById('recTableContainer')) document.getElementById('recTableContainer').innerHTML = h;
   }
 
   function openRecQrModal(idx) {
@@ -1997,11 +1991,11 @@
       filterGroup.style.gap = "3px";
       filterGroup.style.marginBottom = "4px";
 
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 1px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
       
       uniqueLocs.forEach(loc => {
           let locQty = locQtyMap.get(loc);
-          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 1px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
+          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
       });
       filterGroup.innerHTML = fHtml;
 
