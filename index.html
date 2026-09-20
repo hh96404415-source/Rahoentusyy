@@ -262,7 +262,6 @@
     .show-pallets .cell-pallet { display: inline-block !important; font-weight: 900; color: #fde047; text-shadow: 0 0 5px rgba(253, 224, 71, 0.8); font-size: 14px; }
     .cell-pallet { display: none; }
 
-    /* D-Pad 縮小優化 (15%) */
     .d-pad-container {
         display: grid; 
         grid-template-areas: 
@@ -316,7 +315,8 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <div id="devGodModeBtn" style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; cursor: default; z-index: 10;" ondblclick="activateGodMode()"></div>
+    <!-- 支援手機與電腦觸控的 God Mode 點擊觸發區 -->
+    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 70px; height: 70px; cursor: default; z-index: 10;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -334,7 +334,6 @@
   </div>
 </div>
 
-<!-- REC QR Modal -->
 <div id="recQrModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeRecQrModal(event)">
   <div class="glass-box" style="border-color: var(--accent-blue); max-width: 340px; display:flex; flex-direction:column; gap:12px; padding: 16px;" onclick="event.stopPropagation();">
     
@@ -647,7 +646,7 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadGohDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-    <div id="gohFilterGroup" style="display: none; margin-bottom: 8px;"></div>
+    <div id="gohFilterGroup" style="display: none; margin-bottom: 4px;"></div>
     <div class="compact-table-wrapper"><div id="gohTableContainer"></div></div>
   </div>
 
@@ -885,6 +884,22 @@
     if (loadingTimers[elementId]) clearInterval(loadingTimers[elementId]);
     const el = document.getElementById(elementId);
     if (el) { el.innerHTML = ""; el.style.color = "var(--status-red)"; }
+  }
+
+  let godModeClickCount = 0;
+  let godModeTimer = null;
+  function handleGodModeClick() {
+    godModeClickCount++;
+    if (godModeTimer) clearTimeout(godModeTimer);
+    
+    if (godModeClickCount >= 2) {
+      godModeClickCount = 0;
+      activateGodMode();
+    } else {
+      godModeTimer = setTimeout(() => {
+        godModeClickCount = 0;
+      }, 500);
+    }
   }
 
   function activateGodMode() {
@@ -1228,7 +1243,7 @@
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
     let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
     
-    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O"); const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C"); const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER"); const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
+    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().trim() === "SO"); const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C"); const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER"); const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
 
     (res.data||[]).forEach(i => {
       let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL")); let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N"); let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
@@ -1311,6 +1326,8 @@
         
         let soVal = soKey ? String(i[soKey] || "").trim() : "";
         let recidVal = recidKey ? String(i[recidKey] || "").trim() : "";
+        if (!recidVal && soVal) recidVal = soVal;
+        
         globalRecListForQr.push({ so: soVal, recid: recidVal });
         let currentRowIdx = globalRecListForQr.length - 1;
 
@@ -1327,7 +1344,7 @@
             
             let displayV = v;
             if (c === soKey && v !== "" && v !== "-") {
-                displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
+                displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan); color:var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
             }
             
             h+=`<td class="${cls}" style="${inlineStyle}">${displayV}</td>`; 
@@ -1347,7 +1364,7 @@
       currentRecQrIdx = idx;
       const item = globalRecListForQr[idx];
       
-      document.getElementById('recQrModalTitle').textContent = item.so || "NO S/O";
+      document.getElementById('recQrModalTitle').textContent = item.so || "NO SO";
       document.getElementById('recQrModalSubtitle').textContent = item.recid || "NO RECID";
       
       document.getElementById('recQrModalOverlay').style.display = 'flex';
@@ -1925,13 +1942,11 @@
       let totalGohQty = 0;
       globalGohData.forEach(item => {
           const loc = String(item.LOCATION_ID || "").toUpperCase();
-          
           let qty = 0;
           Object.keys(item).forEach(k => {
               let kl = k.toUpperCase();
               if(kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(item[k]) || 0;
           });
-          
           totalGohQty += qty;
           if (!locQtyMap.has(loc)) locQtyMap.set(loc, 0);
           locQtyMap.set(loc, locQtyMap.get(loc) + qty);
@@ -1941,15 +1956,15 @@
       
       const filterGroup = document.getElementById('gohFilterGroup');
       filterGroup.style.display = "grid";
-      filterGroup.style.gridTemplateColumns = "repeat(auto-fill, minmax(75px, 1fr))";
-      filterGroup.style.gap = "4px";
-      filterGroup.style.marginBottom = "8px";
+      filterGroup.style.gridTemplateColumns = "repeat(auto-fill, minmax(85px, 1fr))";
+      filterGroup.style.gap = "3px";
+      filterGroup.style.marginBottom = "4px";
 
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px; font-size: 13px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:11px;">(${totalGohQty})</span></button>`;
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
       
       uniqueLocs.forEach(loc => {
           let locQty = locQtyMap.get(loc);
-          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px; font-size: 13px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:11px;">(${locQty})</span></button>`;
+          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
       });
       filterGroup.innerHTML = fHtml;
 
@@ -1997,13 +2012,11 @@
         let barcode = "";
         let qty = 0;
         
-        // 先尋找 RECEIPT_ID (絕對優先權)
         Object.keys(i).forEach(k => {
             let kl = k.toUpperCase();
             if (kl === "RECEIPT_ID") { receipt = i[k]; }
         });
         
-        // 再處理其他欄位，若沒有 RECEIPT_ID 則尋找 RECEIPT DSTAMP
         Object.keys(i).forEach(k => {
             let kl = k.toUpperCase();
             if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
@@ -2020,9 +2033,9 @@
 
         h += `<tr>
           <td>${loc}</td>
-          <td style="color:var(--accent-cyan); font-size:16px;">${barcode}</td>
-          <td style="color:var(--status-green); font-weight:700; font-size:18px;">${displayQty}</td>
-          <td style="color:var(--status-yellow); font-size:14px;">${tag}</td>
+          <td style="color:var(--accent-cyan); font-size:15px; font-weight:700;">${barcode}</td>
+          <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
+          <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
           <td>${coo}</td>
           <td>${size}</td>
           <td>${sku}</td>
