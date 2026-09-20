@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Rahoentusy WMS</title>
   
   <meta property="og:title" content="CheckerLaboratory" />
@@ -267,10 +267,10 @@
         grid-template-areas: 
             ". up ."
             "left down right";
-        gap: 3px; 
+        gap: 2px; 
         background: rgba(0,0,0,0.4); 
-        padding: 4px; 
-        border-radius: 10px; 
+        padding: 3px; 
+        border-radius: 8px; 
         border: 1px solid var(--border-light); 
         justify-content: center; 
         align-content: center;
@@ -315,8 +315,8 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <!-- 支援手機與電腦觸控的 God Mode 點擊觸發區 -->
-    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 70px; height: 70px; cursor: default; z-index: 10;" onclick="handleGodModeClick()"></div>
+    <!-- 手機與電腦觸控的 God Mode 點擊觸發區 -->
+    <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 80px; height: 80px; cursor: pointer; z-index: 10;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
     <input type="password" id="pinInput" class="pin-input" placeholder="••••" onkeydown="if(event.key === 'Enter') attemptLogin()">
@@ -384,7 +384,7 @@
 <div id="palletModalOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closePalletModal(event)">
   <div class="glass-box" style="border-color: var(--accent-cyan); width: 95%; max-width: 520px; max-height: 95vh; display: flex; flex-direction: column; padding: 14px;" onclick="event.stopPropagation();">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
       
       <div class="d-pad-container" style="flex-shrink: 0;">
         <div class="d-pad-btn btn-up" onclick="navigatePalletModal('up')" title="往上 (層數+1)"><i class="ph ph-caret-up"></i></div>
@@ -801,7 +801,35 @@
       }));
     }
 
-    getAlQtyList() { this._handleResult(fetchCache().then(d => { let r = d.alQty || {}; return { columns: r.columns||[], data: r.data||[], locsCount: r.locsCount||0, plCount: r.plCount||0, totalAlQty: r.totalAlQty||0 }; })); }
+    getAlQtyList() { 
+      this._handleResult(fetchCache().then(d => { 
+        let r = d.alQty || {}; 
+        let listData = r.data || [];
+        let locsSet = new Set();
+        let plSet = new Set();
+        let totalQty = 0;
+        
+        listData.forEach(item => {
+          let locKey = Object.keys(item).find(k => String(k).toUpperCase().includes("LOC"));
+          if (locKey && item[locKey] && item[locKey] !== "-") locsSet.add(String(item[locKey]).trim());
+          
+          let plKey = Object.keys(item).find(k => String(k).toUpperCase().includes("PALLET") || String(k).toUpperCase() === "PL" || String(k).toUpperCase() === "PALLET_ID");
+          if (plKey && item[plKey] && item[plKey] !== "-") plSet.add(String(item[plKey]).trim());
+          
+          let qtyKey = Object.keys(item).find(k => String(k).toUpperCase().includes("QTY"));
+          if (qtyKey && item[qtyKey]) totalQty += (parseFloat(item[qtyKey]) || 0);
+        });
+
+        return { 
+          columns: r.columns || [], 
+          data: listData, 
+          locsCount: locsSet.size || r.locsCount || 0, 
+          plCount: plSet.size || r.plCount || 0, 
+          totalAlQty: totalQty || r.totalAlQty || 0 
+        }; 
+      })); 
+    }
+
     getGaoData() { this._handleResult(fetchCache().then(d => { let r = d.gao || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
     getRecData() { this._handleResult(fetchCache().then(d => { let r = d.rec || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
     getDbData() { this._handleResult(fetchCache().then(d => { let r = d.db || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
@@ -1282,7 +1310,14 @@
 
   function loadRecDataList() {
     let timer = startLoadingMsg('recMsgArea', 'REC STAT');
-    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('recMsgArea', timer); fetchAndUpdateSyncTime('GetUpReceivedQty', 'lastRecRefreshedTime'); renderRecData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('recMsgArea', timer); document.getElementById('recMsgArea').textContent="ERROR:"+e.message; }).getRecData();
+    window.google.script.run.withSuccessHandler((res) => { 
+        stopLoadingMsg('recMsgArea', timer); 
+        fetchAndUpdateSyncTime('GetUpReceivedQty', 'lastRecRefreshedTime'); 
+        renderRecData(res || { headers: [], data: [], rowCount: 0 }); 
+    }).withFailureHandler(e => { 
+        stopLoadingMsg('recMsgArea', timer); 
+        document.getElementById('recMsgArea').textContent="ERROR:"+e.message; 
+    }).getRecData();
     
     window.google.script.run.withSuccessHandler((dbRes) => {
       if (dbRes && dbRes.data) {
@@ -1299,9 +1334,11 @@
   let recQrCodeObj = null;
 
   function renderRecData(res) {
-    let tScnd=0, tScn=0; document.getElementById('totRecRows').textContent = res.rowCount||0;
+    let tScnd=0, tScn=0; 
+    if(document.getElementById('totRecRows')) document.getElementById('totRecRows').textContent = res.rowCount||0;
+    
     let catKey = (res.headers || []).find(h => h.toUpperCase().trim() === "CAT"); 
-    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "SO" || h.toUpperCase().trim() === "S/O" || h.toUpperCase().includes("UPD/"));
+    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "SO" || h.toUpperCase().trim() === "S/O");
     let recidKey = (res.headers || []).find(h => h.toUpperCase().trim() === "RECID" || h.toUpperCase().trim() === "RECEIPT_ID" || h.toUpperCase().trim() === "RECEIPT");
     
     globalRecListForQr = []; 
@@ -1343,7 +1380,7 @@
             if (v === 0 || String(v).trim() === "0") v = ""; 
             
             let displayV = v;
-            if (c === soKey && v !== "" && v !== "-") {
+            if ((c === soKey || cln === "SO") && v !== "" && v !== "-") {
                 displayV = `<span style="cursor:pointer; border-bottom:1px dashed var(--accent-cyan); color:var(--accent-cyan);" onclick="openRecQrModal(${currentRowIdx})">${v}</span>`;
             }
             
@@ -1353,10 +1390,10 @@
     }); 
     h+=`</tbody></table>`;
     
-    document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); 
-    document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); 
-    document.getElementById('recSummaryBox').style.display = "flex"; 
-    document.getElementById('recTableContainer').innerHTML = h;
+    if(document.getElementById('totRecScnd')) document.getElementById('totRecScnd').textContent = Number.isInteger(tScnd)?tScnd:tScnd.toFixed(2); 
+    if(document.getElementById('totRecScn')) document.getElementById('totRecScn').textContent = Number.isInteger(tScn)?"-"+tScn:"-"+tScn.toFixed(2); 
+    if(document.getElementById('recSummaryBox')) document.getElementById('recSummaryBox').style.display = "flex"; 
+    if(document.getElementById('recTableContainer')) document.getElementById('recTableContainer').innerHTML = h;
   }
 
   function openRecQrModal(idx) {
@@ -1960,11 +1997,11 @@
       filterGroup.style.gap = "3px";
       filterGroup.style.marginBottom = "4px";
 
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 1px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
       
       uniqueLocs.forEach(loc => {
           let locQty = locQtyMap.get(loc);
-          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
+          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 1px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
       });
       filterGroup.innerHTML = fHtml;
 
@@ -2017,12 +2054,18 @@
             if (kl === "RECEIPT_ID") { receipt = i[k]; }
         });
         
+        if (!receipt) {
+            Object.keys(i).forEach(k => {
+                let kl = k.toUpperCase();
+                if (kl === "RECEIPT" || kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP") receipt = i[k];
+            });
+        }
+        
         Object.keys(i).forEach(k => {
             let kl = k.toUpperCase();
             if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
             if (kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(i[k]) || 0;
             if (kl === "SKU SIZE" || kl === "SIZE") size = i[k];
-            if (receipt === "" && (kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP")) receipt = i[k];
         });
         
         totRows++;
@@ -2033,13 +2076,13 @@
 
         h += `<tr>
           <td>${loc}</td>
-          <td style="color:var(--accent-cyan); font-size:15px; font-weight:700;">${barcode}</td>
+          <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
           <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
           <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
           <td>${coo}</td>
           <td>${size}</td>
           <td>${sku}</td>
-          <td style="font-size:11px; color:var(--text-muted);">${receipt}</td>
+          <td style="font-size:12px; color:var(--text-main);">${receipt}</td>
         </tr>`;
       });
       h += `</tbody></table>`;
