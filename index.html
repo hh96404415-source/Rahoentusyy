@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rahoentusy WMS</title>
   
   <meta property="og:title" content="CheckerLaboratory" />
@@ -309,12 +309,23 @@
         animation: flashHighlight 0.6s ease-out;
         display: inline-block;
     }
+
+    /* GOH Multi-level filters styling - 改回電腦友善的自動換行 (Wrap) */
+    .goh-filter-row {
+        display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .goh-filter-label {
+        font-size: 10px; color: var(--accent-cyan); font-family: 'Roboto Mono', monospace; font-weight: bold;
+        display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1);
+        border-radius: 4px; padding: 2px 4px;
+    }
   </style>
 </head>
 <body>
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
+    <!-- 手機觸控友善的 God Mode 點擊觸發區 -->
     <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10; touch-action: manipulation;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
@@ -631,7 +642,7 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-    <div id="gohFilterGroup" style="display: none; margin-bottom: 4px;"></div>
+    <div id="gohFilterGroup" style="display: none; flex-direction: column; gap: 4px; margin-bottom: 6px;"></div>
     <div class="compact-table-wrapper"><div id="gohTableContainer"></div></div>
   </div>
 
@@ -1292,14 +1303,29 @@
     if (document.getElementById('totGaoRows')) document.getElementById('totGaoRows').textContent = res.rowCount||0;
     let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`;
     
-    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN"); let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().trim() === "SO"); const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C"); const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER"); const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
+    let planKey = (res.headers || []).find(h => h.toUpperCase().trim() === "PLAN"); 
+    let soKey = (res.headers || []).find(h => h.toUpperCase().trim() === "S/O" || h.toUpperCase().trim() === "SO"); 
+    const pcKey = (res.headers || []).find(h => h.toUpperCase().trim() === "P/C"); 
+    const genderKey = (res.headers || []).find(h => h.toUpperCase().trim() === "GENDER"); 
+    const targetColorColumns = ["P/C", "GENDER", "CBM", "CTNS", "PCS"];
 
     (res.data||[]).forEach(i => {
-      let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL")); let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; let isPlanN = (planValue === "N"); let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
+      let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL")); 
+      let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; 
+      let isPlanN = (planValue.charAt(0) === "N"); // Modified to check only first letter
+      let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; 
+      let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
+      
       let specialStyle = ""; let categoryClass = "cat-oth"; 
-      if (pcValue.includes("GOH")) { specialStyle = "color:#d946ef; font-weight:700;"; categoryClass = "cat-goh"; } else if (genderValue.includes("FOOTWEAR")) { specialStyle = "color:#ff8c00; font-weight:700;"; categoryClass = "cat-ftw"; } else if (genderValue.includes("ACCESSORY")) { specialStyle = "color:#ff003c; font-weight:700;"; categoryClass = "cat-acc"; } else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
+      if (pcValue.includes("GOH")) { specialStyle = "color:#d946ef; font-weight:700;"; categoryClass = "cat-goh"; } 
+      else if (genderValue.includes("FOOTWEAR")) { specialStyle = "color:#ff8c00; font-weight:700;"; categoryClass = "cat-ftw"; } 
+      else if (genderValue.includes("ACCESSORY")) { specialStyle = "color:#ff003c; font-weight:700;"; categoryClass = "cat-acc"; } 
+      else if (genderValue.includes("BDW")) { specialStyle = "color:#86efac; font-weight:700;"; categoryClass = "cat-bdw"; }
 
-      if(!isT && soKey && i[soKey] && i[soKey] !== "-") { tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal; if (pcValue.includes("GOH")) pGoh += pcsVal; else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal; else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal; else if (genderValue.includes("BDW")) pBdw += pcsVal; else pOth += pcsVal; }
+      if(!isT && soKey && i[soKey] && i[soKey] !== "-") { 
+          tCbm += parseFloat(i["CBM"])||0; tCtns += parseFloat(i["Ctns"] || i["CTNS"]||0); let pcsVal = parseFloat(i["PCS"])||0; tPcs += pcsVal; 
+          if (pcValue.includes("GOH")) pGoh += pcsVal; else if (genderValue.includes("FOOTWEAR")) pFtw += pcsVal; else if (genderValue.includes("ACCESSORY")) pAcc += pcsVal; else if (genderValue.includes("BDW")) pBdw += pcsVal; else pOth += pcsVal; 
+      }
       
       h+=`<tr class="${isT ? 'gao-total-row' : ('gao-data-row ' + categoryClass)}">`;
       (res.headers || []).forEach((c, colIndex) => { 
@@ -1319,6 +1345,7 @@
         
         if (c === soKey && !isT) { v = String(v).replace(/^GAO-/i, ''); }
         if (isT && colIndex === 0) { v = String(v).replace(/\s*Total/ig, ''); }
+        if (c === planKey && !isT && v) { v = String(v).trim().charAt(0).toUpperCase(); } // Keep only first letter
 
         h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`; 
       }); 
@@ -1589,11 +1616,6 @@
       }
       
       let html = '';
-      // Create a unique set of pallets to display so we don't repeat them
-      // Previously this listed every task, but now we should aggregate or just list the unique pallets.
-      // We'll keep the list but maybe group by pallet if needed, or just display as is since palletCount was updated.
-      // Wait, the user just wants the COUNT on the map cell to be unique pallets.
-      // I'll just render the items exactly as they were passed, which is now a unique list of objects per pallet (due to the fix in renderMapTableCore).
       items.forEach((item, idx) => {
         let pStr = String(item.pallet || "-").trim();
         let pDisplay = pStr;
@@ -1840,13 +1862,10 @@
       
       window.restockLocsCache = new Map();
       restockLocs.forEach((set, key) => {
-          // 在這裡將多筆補貨任務依照棧板去重 (如果同一個棧板有多筆任務，我們只在點擊的清單中顯示去重後的代表資料，或全部顯示)
-          // 原本是全顯示，但為了對齊畫面的數字，我們可以將 pallet 作為唯一鍵來過濾
           let parsedArr = Array.from(set).map(str => JSON.parse(str));
           let uniquePalletsMap = new Map();
           parsedArr.forEach(p => {
               if (p.pallet && p.pallet !== "-") {
-                  // 如果同一個棧板有多筆，數量累加，任務號保留第一個
                   if (uniquePalletsMap.has(p.pallet)) {
                       let existing = uniquePalletsMap.get(p.pallet);
                       existing.qty = (parseFloat(existing.qty) || 0) + (parseFloat(p.qty) || 0);
@@ -1894,7 +1913,7 @@
             let targetKey = `${currentRowGroup}-${col}-${lvl}`;
             let isRestockTarget = restockLocs.has(targetKey);
             
-            // 核心修改：動態提取唯一的棧板數 (COUNTUNIQUE PL)
+            // COUNTUNIQUE PL
             let palletCount = 0;
             if (isRestockTarget) {
                 let uniquePls = new Set();
@@ -1926,7 +1945,6 @@
               innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
             }
             
-            // 點擊彈窗內顯示的資料，我們直接給上面快取去重過的資料
             let palletArr = isRestockTarget ? window.restockLocsCache.get(targetKey) : [];
             let encodedData = encodeURIComponent(JSON.stringify(palletArr));
             let displayLoc = `${String(currentRowGroupStr).padStart(2, '0')}-${bayStr}-${String(col).padStart(3, '0')}-${String(lvl).padStart(2, '0')}`;
@@ -2051,7 +2069,38 @@
   }
 
   let globalGohData = [];
-  let activeGohFilter = 'ALL';
+  const gohMultiFilters = { receipt: new Set(), pl: new Set() };
+
+  function getGohReceipt(item) {
+      let receipt = "";
+      Object.keys(item).forEach(k => {
+          let kl = k.toUpperCase();
+          if (kl === "RECEIPT_ID") { receipt = String(item[k]).trim(); }
+      });
+      if (!receipt) {
+          Object.keys(item).forEach(k => {
+              let kl = k.toUpperCase();
+              if (kl === "RECEIPT" || kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP") receipt = String(item[k]).trim();
+          });
+      }
+      return receipt === "" || receipt === "-" ? "NO_RECEIPT" : receipt;
+  }
+
+  function getGohPallet(item) {
+      if (item["Pallet ID"] !== undefined && item["Pallet ID"] !== null) {
+          let p = String(item["Pallet ID"]).trim();
+          if (p !== "") return p;
+      }
+      let found = "-";
+      Object.keys(item).forEach(k => {
+          let kl = String(k).toUpperCase().trim();
+          if (kl === "PALLET ID" || kl === "PALLET_ID" || kl === "PALLET" || kl === "PL") {
+              let val = String(item[k]).trim();
+              if (val !== "") found = val;
+          }
+      });
+      return found;
+  }
 
   function loadGohDataList() {
     let timer = startLoadingMsg('gohMsgArea', 'GOH INVENTORY');
@@ -2064,37 +2113,10 @@
         return /T\d+/.test(loc) && loc !== "TRANST001";
       });
 
-      const locQtyMap = new Map();
-      let totalGohQty = 0;
-      globalGohData.forEach(item => {
-          const loc = String(item.LOCATION_ID || "").toUpperCase();
-          let qty = 0;
-          Object.keys(item).forEach(k => {
-              let kl = k.toUpperCase();
-              if(kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(item[k]) || 0;
-          });
-          totalGohQty += qty;
-          if (!locQtyMap.has(loc)) locQtyMap.set(loc, 0);
-          locQtyMap.set(loc, locQtyMap.get(loc) + qty);
-      });
-
-      const uniqueLocs = Array.from(locQtyMap.keys()).sort();
+      gohMultiFilters.receipt.clear();
+      gohMultiFilters.pl.clear();
       
-      const filterGroup = document.getElementById('gohFilterGroup');
-      filterGroup.style.display = "grid";
-      filterGroup.style.gridTemplateColumns = "repeat(auto-fill, minmax(85px, 1fr))";
-      filterGroup.style.gap = "3px";
-      filterGroup.style.marginBottom = "4px";
-
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterGoh('ALL')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalGohQty})</span></button>`;
-      
-      uniqueLocs.forEach(loc => {
-          let locQty = locQtyMap.get(loc);
-          fHtml += `<button class="filter-btn-compact" data-loc="${loc}" onclick="filterGoh('${loc}')" style="padding: 2px 4px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${loc} <span style="color:var(--text-muted); font-size:10px;">(${locQty})</span></button>`;
-      });
-      filterGroup.innerHTML = fHtml;
-
-      activeGohFilter = 'ALL';
+      renderGohFilters();
       renderGohTable();
 
     }).withFailureHandler(e => {
@@ -2103,17 +2125,118 @@
     }).getAllInventoryData();
   }
 
-  function filterGoh(loc) {
-      activeGohFilter = loc;
-      document.querySelectorAll('#gohFilterGroup .filter-btn-compact').forEach(btn => {
-          if (btn.getAttribute('data-loc') === loc) {
-              btn.classList.add('active');
-              btn.style.borderColor = 'var(--status-yellow)';
-          } else {
-              btn.classList.remove('active');
-              btn.style.borderColor = 'var(--border-light)';
+  function renderGohFilters() {
+      let totalGohQty = 0;
+      const receiptQtyMap = new Map();
+      const plQtyMap = new Map();
+      const validPlsForSelectedReceipts = new Set();
+      
+      // 第1階段：計算全域收貨單(RECEIPT)的數量
+      globalGohData.forEach(item => {
+          let qty = 0;
+          Object.keys(item).forEach(k => { if(k.toUpperCase() === "QTY_ON_HAND" || k.toUpperCase() === "QTY") qty = parseFloat(item[k]) || 0; });
+          totalGohQty += qty;
+          
+          let receipt = getGohReceipt(item);
+          receiptQtyMap.set(receipt, (receiptQtyMap.get(receipt) || 0) + qty);
+      });
+      
+      const hasReceiptFilter = gohMultiFilters.receipt.size > 0;
+      let filteredGohQty = 0;
+
+      // 第2階段：根據選擇的收貨單(RECEIPT)，過濾出對應的棧板(PL)
+      globalGohData.forEach(item => {
+          let receipt = getGohReceipt(item);
+          let qty = 0;
+          Object.keys(item).forEach(k => { if(k.toUpperCase() === "QTY_ON_HAND" || k.toUpperCase() === "QTY") qty = parseFloat(item[k]) || 0; });
+          
+          if (!hasReceiptFilter || gohMultiFilters.receipt.has(receipt)) {
+              filteredGohQty += qty;
+              let pallet = getGohPallet(item);
+              validPlsForSelectedReceipts.add(pallet);
+              plQtyMap.set(pallet, (plQtyMap.get(pallet) || 0) + qty);
           }
       });
+      
+      // 清理已經失效的棧板條件（防呆：切換 RECEIPT 後，舊的 PL 不存在了）
+      let plFiltersChanged = false;
+      gohMultiFilters.pl.forEach(pl => {
+          if (!validPlsForSelectedReceipts.has(pl)) {
+              gohMultiFilters.pl.delete(pl);
+              plFiltersChanged = true;
+          }
+      });
+      
+      const filterGroup = document.getElementById('gohFilterGroup');
+      filterGroup.style.display = "flex";
+      filterGroup.style.flexDirection = "column";
+      filterGroup.style.gap = "4px";
+      filterGroup.style.marginBottom = "6px";
+      
+      let html = '';
+      
+      // 1. RECEIPT 橫排 (支援多列折行)
+      html += `<div class="goh-filter-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
+      html += `<span class="goh-filter-label" style="font-size: 10px; color: var(--accent-cyan); font-family: 'Roboto Mono', monospace; font-weight: bold; display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; padding: 2px 4px;">REC</span>`;
+      html += `<button class="filter-btn-compact ${hasReceiptFilter ? '' : 'active'}" data-type="receipt" data-val="ALL" onclick="toggleGohFilter('receipt', 'ALL')">ALL <span style="color:var(--text-muted); font-size:9px;">(${totalGohQty})</span></button>`;
+      Array.from(receiptQtyMap.keys()).sort().forEach(rec => {
+          let displayRec = rec === "NO_RECEIPT" ? "NONE" : rec.slice(-4);
+          let isActive = gohMultiFilters.receipt.has(rec) ? 'active' : '';
+          let style = gohMultiFilters.receipt.has(rec) ? 'color:var(--status-yellow); border-color:var(--status-yellow);' : 'color:var(--status-yellow); border-color:var(--border-light);';
+          html += `<button class="filter-btn-compact ${isActive}" data-type="receipt" data-val="${rec}" onclick="toggleGohFilter('receipt', '${rec}')" style="${style}">${displayRec} <span style="color:var(--text-muted); font-size:9px;">(${receiptQtyMap.get(rec)})</span></button>`;
+      });
+      html += `</div>`;
+
+      // 2. PL 橫排 (聯動後過濾的結果)
+      html += `<div class="goh-filter-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
+      html += `<span class="goh-filter-label" style="font-size: 10px; color: #38bdf8; font-family: 'Roboto Mono', monospace; font-weight: bold; display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; padding: 2px 4px;">PL</span>`;
+      html += `<button class="filter-btn-compact ${gohMultiFilters.pl.size === 0 ? 'active' : ''}" data-type="pl" data-val="ALL" onclick="toggleGohFilter('pl', 'ALL')">ALL <span style="color:var(--text-muted); font-size:9px;">(${filteredGohQty})</span></button>`;
+      Array.from(plQtyMap.keys()).sort().forEach(pl => {
+          let displayPl = pl === "-" ? "NONE" : (pl.length > 5 ? pl.slice(-5) : pl);
+          let isActive = gohMultiFilters.pl.has(pl) ? 'active' : '';
+          let style = gohMultiFilters.pl.has(pl) ? 'color:#38bdf8; border-color:#38bdf8;' : 'color:#38bdf8; border-color:var(--border-light);';
+          html += `<button class="filter-btn-compact ${isActive}" data-type="pl" data-val="${pl}" onclick="toggleGohFilter('pl', '${pl}')" style="${style}">${displayPl} <span style="color:var(--text-muted); font-size:9px;">(${plQtyMap.get(pl)})</span></button>`;
+      });
+      html += `</div>`;
+
+      filterGroup.innerHTML = html;
+      
+      // 如果防呆機制清除了舊的 PL 條件，強制重新渲染表格
+      if (plFiltersChanged) renderGohTable();
+  }
+
+  function toggleGohFilter(type, val) {
+      if (val === 'ALL') {
+          gohMultiFilters[type].clear();
+      } else {
+          if (gohMultiFilters[type].has(val)) {
+              gohMultiFilters[type].delete(val);
+          } else {
+              gohMultiFilters[type].add(val);
+          }
+      }
+
+      // 如果點擊的是 RECEIPT，必須觸發整體過濾器的重新渲染以計算聯動的 PL
+      if (type === 'receipt') {
+          renderGohFilters();
+      } else {
+          // 如果只是點擊 PL，只需要單純修改按鈕的外觀與狀態
+          document.querySelectorAll(`#gohFilterGroup .filter-btn-compact[data-type="${type}"]`).forEach(btn => {
+              let btnVal = btn.getAttribute('data-val');
+              if (btnVal === 'ALL') {
+                  if (gohMultiFilters[type].size === 0) btn.classList.add('active');
+                  else btn.classList.remove('active');
+              } else {
+                  if (gohMultiFilters[type].has(btnVal)) {
+                      btn.classList.add('active');
+                      btn.style.borderColor = btn.style.color; 
+                  } else {
+                      btn.classList.remove('active');
+                      btn.style.borderColor = 'var(--border-light)';
+                  }
+              }
+          });
+      }
       renderGohTable();
   }
 
@@ -2122,33 +2245,24 @@
       let totQty = 0;
 
       let h = `<table class="compact-table"><thead><tr>
-        <th>LOC</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>SKU</th><th>RECEIPT</th>
+        <th>LOC</th><th>PL</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
       </tr></thead><tbody>`;
 
       globalGohData.forEach(i => {
-        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
-        if (activeGohFilter !== 'ALL' && loc !== activeGohFilter) return;
+        let receipt = getGohReceipt(i);
+        let pallet = getGohPallet(i);
 
+        let passReceipt = gohMultiFilters.receipt.size === 0 || gohMultiFilters.receipt.has(receipt);
+        let passPl = gohMultiFilters.pl.size === 0 || gohMultiFilters.pl.has(pallet);
+
+        if (!passReceipt || !passPl) return;
+
+        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
         let tag = i["TAG_ID"] || "";
-        let sku = i["SKU_ID"] || "";
         let coo = i["User Def Type 1"] || "";
-        
-        let receipt = "";
         let size = "";
         let barcode = "";
         let qty = 0;
-        
-        Object.keys(i).forEach(k => {
-            let kl = k.toUpperCase();
-            if (kl === "RECEIPT_ID") { receipt = i[k]; }
-        });
-        
-        if (!receipt) {
-            Object.keys(i).forEach(k => {
-                let kl = k.toUpperCase();
-                if (kl === "RECEIPT" || kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP") receipt = i[k];
-            });
-        }
         
         Object.keys(i).forEach(k => {
             let kl = k.toUpperCase();
@@ -2160,18 +2274,17 @@
         totRows++;
         totQty += qty;
 
-        let displayQty = qty;
-        if (qty === 0) displayQty = "";
+        let displayQty = qty === 0 ? "" : qty;
 
         h += `<tr>
           <td>${loc}</td>
+          <td style="font-family:'Roboto Mono', monospace;">${formatDbPalletStr(pallet)}</td>
           <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
           <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
           <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
           <td>${coo}</td>
           <td>${size}</td>
-          <td>${sku}</td>
-          <td style="font-size:12px; color:var(--text-main);">${receipt}</td>
+          <td style="font-size:12px; color:var(--text-main);">${receipt === "NO_RECEIPT" ? "" : receipt}</td>
         </tr>`;
       });
       h += `</tbody></table>`;
