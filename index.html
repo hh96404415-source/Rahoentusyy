@@ -527,27 +527,6 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
-    <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
-  </div>
-
-  <!-- Gao (DI) View -->
-  <div id="gaoView" class="view-section" style="display: none;">
-    <div id="gaoMsgArea" class="message"></div>
-    <div class="summary-box-compact" id="gaoSummaryBox" style="display: none;">
-      <div class="summary-item-compact">ROWS:<span id="totGaoRows">0</span></div>
-      <div class="summary-item-compact">CBM:<span id="totGaoCbm" style="color:var(--accent-blue);">0</span></div>
-      <div class="summary-item-compact">CTNS:<span id="totGaoCtns" style="color:var(--accent-blue);">0</span></div>
-      <div class="summary-item-compact">PCS:<span id="totGaoPcs" style="color:var(--accent-blue);">0</span></div>
-      <div class="summary-item-compact" style="color:#d946ef;">GOH:<span id="totGaoPcsGOH" style="color:#d946ef;">0</span></div>
-      <div class="summary-item-compact" style="color:#ff8c00;">FTW:<span id="totGaoPcsFTW" style="color:#ff8c00;">0</span></div>
-      <div class="summary-item-compact" style="color:#ff003c;">ACC:<span id="totGaoPcsACC" style="color:#ff003c;">0</span></div>
-      <div class="summary-item-compact" style="color:#86efac;">BDW:<span id="totGaoPcsBDW" style="color:#86efac;">0</span></div>
-      <div class="summary-item-compact" style="color:var(--text-main);">OTH:<span id="totGaoPcsOTH" style="color:var(--text-main);">0</span></div>
-      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
-        <span id="lastGaoRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
-      </div>
-    </div>
     <div id="gaoFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
       <button class="filter-btn-compact active" data-filter="ALL" onclick="filterGao('ALL')">ALL</button>
       <button class="filter-btn-compact" data-filter="GOH" style="color:#d946ef;" onclick="filterGao('GOH')">GOH</button>
@@ -599,35 +578,6 @@
         <button id="toggleMapPalletBtn" class="icon-btn" style="min-width: 24px; height:24px; font-size:12px; border-color:var(--border-light);" onclick="toggleMapPalletView()" title="切換顯示棧板數"><i class="ph ph-package"></i></button>
         <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
-      </div>
-    </div>
-    <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
-  </div>
-  
-  <!-- DB View -->
-  <div id="dbView" class="view-section" style="display: none;">
-    <div id="dbMsgArea" class="message"></div>
-    <div class="summary-box-compact" id="dbSummaryBox" style="display: none;">
-      <div class="summary-item-compact">ROWS:<span id="totDbRows">0</span></div>
-      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
-        <span id="lastDbRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
-      </div>
-    </div>
-    <div class="compact-table-wrapper"><div id="dbTableContainer"></div></div>
-  </div>
-
-  <!-- MAP View -->
-  <div id="mapView" class="view-section" style="display: none;">
-    <div id="mapMsgArea" class="message"></div>
-    <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
-      <div class="summary-item-compact">EMPTY:<span id="mapTotEmpty">0</span></div>
-      <div class="summary-item-compact">OCCUPY:<span id="mapTotOccupy" style="color:var(--status-yellow);">0</span></div>
-      <div class="summary-item-compact">USED:<span id="mapTotUsed" style="color:var(--status-green);">0</span></div>
-      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
-        <button id="toggleMapPalletBtn" class="icon-btn" style="min-width: 24px; height:24px; font-size:12px; border-color:var(--border-light);" onclick="toggleMapPalletView()" title="切換顯示棧板數"><i class="ph ph-package"></i></button>
-        <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div id="mapFilterGroup" class="filter-group-compact" style="display: none; flex-wrap: wrap; margin-bottom: 4px;">
