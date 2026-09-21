@@ -438,7 +438,7 @@
       <div class="summary-item-compact">ALQTY: <span id="totListAlQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="listTableContainer"></div></div>
@@ -503,7 +503,28 @@
       <div id="orderStatusMetricsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; flex: 1;"></div>
       <div style="display:flex; align-items:center; gap:4px; padding-left: 6px; border-left: 1px solid var(--border-light);">
         <span id="lastOrderStatusRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
+  </div>
+
+  <!-- Gao (DI) View -->
+  <div id="gaoView" class="view-section" style="display: none;">
+    <div id="gaoMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="gaoSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totGaoRows">0</span></div>
+      <div class="summary-item-compact">CBM:<span id="totGaoCbm" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact">CTNS:<span id="totGaoCtns" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact">PCS:<span id="totGaoPcs" style="color:var(--accent-blue);">0</span></div>
+      <div class="summary-item-compact" style="color:#d946ef;">GOH:<span id="totGaoPcsGOH" style="color:#d946ef;">0</span></div>
+      <div class="summary-item-compact" style="color:#ff8c00;">FTW:<span id="totGaoPcsFTW" style="color:#ff8c00;">0</span></div>
+      <div class="summary-item-compact" style="color:#ff003c;">ACC:<span id="totGaoPcsACC" style="color:#ff003c;">0</span></div>
+      <div class="summary-item-compact" style="color:#86efac;">BDW:<span id="totGaoPcsBDW" style="color:#86efac;">0</span></div>
+      <div class="summary-item-compact" style="color:var(--text-main);">OTH:<span id="totGaoPcsOTH" style="color:var(--text-main);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <span id="lastGaoRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
@@ -548,7 +569,36 @@
       <div class="summary-item-compact text-red">-SCN:<span id="totRecScn" class="text-red">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastRecRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
+  </div>
+  
+  <!-- DB View -->
+  <div id="dbView" class="view-section" style="display: none;">
+    <div id="dbMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="dbSummaryBox" style="display: none;">
+      <div class="summary-item-compact">ROWS:<span id="totDbRows">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <span id="lastDbRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+      </div>
+    </div>
+    <div class="compact-table-wrapper"><div id="dbTableContainer"></div></div>
+  </div>
+
+  <!-- MAP View -->
+  <div id="mapView" class="view-section" style="display: none;">
+    <div id="mapMsgArea" class="message"></div>
+    <div class="summary-box-compact" id="mapSummaryBox" style="display: none;">
+      <div class="summary-item-compact">EMPTY:<span id="mapTotEmpty">0</span></div>
+      <div class="summary-item-compact">OCCUPY:<span id="mapTotOccupy" style="color:var(--status-yellow);">0</span></div>
+      <div class="summary-item-compact">USED:<span id="mapTotUsed" style="color:var(--status-green);">0</span></div>
+      <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
+        <button id="toggleMapPalletBtn" class="icon-btn" style="min-width: 24px; height:24px; font-size:12px; border-color:var(--border-light);" onclick="toggleMapPalletView()" title="切換顯示棧板數"><i class="ph ph-package"></i></button>
+        <span id="lastMapRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="recTableContainer"></div></div>
@@ -603,7 +653,7 @@
       <div class="summary-item-compact">ROWS:<span id="totLpRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastLpRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="lpTableContainer"></div></div>
@@ -616,7 +666,7 @@
       <div class="summary-item-compact">ROWS:<span id="totUphRows">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastUphRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="window.location.reload()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div class="compact-table-wrapper"><div id="uphTableContainer"></div></div>
@@ -629,7 +679,7 @@
       <div class="summary-item-compact">ROWS:<span id="totGohRows">0</span></div>
       <div class="summary-item-compact">QTY:<span id="totGohQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadGohDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div id="gohFilterGroup" style="display: none; margin-bottom: 4px;"></div>
@@ -643,7 +693,7 @@
       <div class="summary-item-compact">ROWS:<span id="totStRows">0</span></div>
       <div class="summary-item-compact">PL:<span id="totStQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
-        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="loadStDataList()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
+        <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
     <div id="stFilterGroup" style="display: none; margin-bottom: 4px;"></div>
@@ -1129,6 +1179,27 @@
     else if (tab === 'uph') loadUphData();     
     else if (tab === 'goh') loadGohDataList();
     else if (tab === 'st') loadStDataList();
+  }
+
+  function forceRefreshData() {
+    // 強制清除目前的記憶體與 Promise 快取，確保下次呼叫一定去伺服器抓最新資料
+    cachedData = null;
+    fetchPromise = null;
+    
+    // 判斷目前在哪個分頁，只單獨重新抓取該分頁的資料
+    if (currentTab === 'search') { 
+        if (searchInput.value) fetchData(); 
+    }
+    else if (currentTab === 'list') loadAlList();
+    else if (currentTab === 'orderStatus') loadOrderStatusList();
+    else if (currentTab === 'gao') loadGaoDataList();
+    else if (currentTab === 'rec') loadRecDataList();
+    else if (currentTab === 'db') loadDbDataList();
+    else if (currentTab === 'map') loadMapData();
+    else if (currentTab === 'lp') loadLoadplanData(); 
+    else if (currentTab === 'uph') loadUphData();     
+    else if (currentTab === 'goh') loadGohDataList();
+    else if (currentTab === 'st') loadStDataList();
   }
 
   function fetchData() {
