@@ -315,7 +315,6 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <!-- 手機觸控友善的 God Mode 點擊觸發區 -->
     <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10; touch-action: manipulation;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
@@ -743,8 +742,8 @@
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
         let authList = []; let authHeaders = [];
-        if (Array.isArray(data.auth)) { authList = data.auth; authHeaders = ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
-        else if (data.auth && data.auth.users) { authList = data.auth.users; authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
+        if (Array.isArray(data.auth)) { authList = data.auth.filter(u => u !== null); authHeaders = ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
+        else if (data.auth && data.auth.users) { authList = (data.auth.users || []).filter(u => u !== null); authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
 
         const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
@@ -773,7 +772,7 @@
 
     searchLocation(loc) {
       this._handleResult(fetchCache().then(data => {
-        const inventory = data.inventory || [];
+        const inventory = (data.inventory || []).filter(i => i !== null);
         const targetLoc = String(loc).trim().toUpperCase();
         const resultData = inventory.filter(item => String(item.LOCATION_ID || "").toUpperCase() === targetLoc).sort((a, b) => String(a.TAG_ID || "").toUpperCase().localeCompare(String(b.TAG_ID || "").toUpperCase()));
         let sumQty = 0; let uniqueTags = new Set(); let uniquePallets = new Set();
@@ -788,7 +787,7 @@
 
     searchSupplierSku(sku) {
       this._handleResult(fetchCache().then(data => {
-        const inventory = data.inventory || [];
+        const inventory = (data.inventory || []).filter(i => i !== null);
         const targetSku = String(sku).trim().toUpperCase();
         const resultData = inventory.filter(item => String(item.SUPPLIER_SKU_ID || "").toUpperCase() === targetSku);
         let sumQty = 0; let uniqueLocs = new Set(); let uniqueTags = new Set();
@@ -804,7 +803,7 @@
     getAlQtyList() { 
       this._handleResult(fetchCache().then(d => { 
         let r = d.alQty || {}; 
-        let listData = r.data || [];
+        let listData = (r.data || []).filter(i => i !== null);
         let locsSet = new Set();
         let plSet = new Set();
         let totalQty = 0;
@@ -830,14 +829,14 @@
       })); 
     }
 
-    getGaoData() { this._handleResult(fetchCache().then(d => { let r = d.gao || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getRecData() { this._handleResult(fetchCache().then(d => { let r = d.rec || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getDbData() { this._handleResult(fetchCache().then(d => { let r = d.db || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getOrderStatusData() { this._handleResult(fetchCache().then(d => { let r = d.orderStatus || {}; return { headers: r.headers||[], totals: r.totals||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getMapData() { this._handleResult(fetchCache().then(d => { let r = d.map || {}; return { grid: r.grid||[], rowCount: r.rowCount||0 }; })); }
-    getLoadplanData() { this._handleResult(fetchCache().then(d => { let r = d.loadplan || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getUphData() { this._handleResult(fetchCache().then(d => { let r = d.uph || {}; return { headers: r.headers||[], data: r.data||[], rowCount: r.rowCount||0 }; })); }
-    getAllInventoryData() { this._handleResult(fetchCache().then(d => d.inventory || [])); }
+    getGaoData() { this._handleResult(fetchCache().then(d => { let r = d.gao || {}; return { headers: r.headers||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getRecData() { this._handleResult(fetchCache().then(d => { let r = d.rec || {}; return { headers: r.headers||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getDbData() { this._handleResult(fetchCache().then(d => { let r = d.db || {}; return { headers: r.headers||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getOrderStatusData() { this._handleResult(fetchCache().then(d => { let r = d.orderStatus || {}; return { headers: r.headers||[], totals: r.totals||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getMapData() { this._handleResult(fetchCache().then(d => { let r = d.map || {}; return { grid: (r.grid||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getLoadplanData() { this._handleResult(fetchCache().then(d => { let r = d.loadplan || {}; return { headers: r.headers||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getUphData() { this._handleResult(fetchCache().then(d => { let r = d.uph || {}; return { headers: r.headers||[], data: (r.data||[]).filter(i=>i!==null), rowCount: r.rowCount||0 }; })); }
+    getAllInventoryData() { this._handleResult(fetchCache().then(d => (d.inventory || []).filter(i=>i!==null))); }
 
     saveAuditRecord(payload) {
       this._handleResult(
@@ -1132,11 +1131,9 @@
   }
 
   function forceRefreshData() {
-    // 強制清除目前的記憶體與 Promise 快取，確保下次呼叫一定去伺服器抓最新資料
     cachedData = null;
     fetchPromise = null;
     
-    // 判斷目前在哪個分頁，只單獨重新抓取該分頁的資料
     if (currentTab === 'search') { 
         if (searchInput.value) fetchData(); 
     }
@@ -1592,6 +1589,11 @@
       }
       
       let html = '';
+      // Create a unique set of pallets to display so we don't repeat them
+      // Previously this listed every task, but now we should aggregate or just list the unique pallets.
+      // We'll keep the list but maybe group by pallet if needed, or just display as is since palletCount was updated.
+      // Wait, the user just wants the COUNT on the map cell to be unique pallets.
+      // I'll just render the items exactly as they were passed, which is now a unique list of objects per pallet (due to the fix in renderMapTableCore).
       items.forEach((item, idx) => {
         let pStr = String(item.pallet || "-").trim();
         let pDisplay = pStr;
@@ -1838,8 +1840,22 @@
       
       window.restockLocsCache = new Map();
       restockLocs.forEach((set, key) => {
+          // 在這裡將多筆補貨任務依照棧板去重 (如果同一個棧板有多筆任務，我們只在點擊的清單中顯示去重後的代表資料，或全部顯示)
+          // 原本是全顯示，但為了對齊畫面的數字，我們可以將 pallet 作為唯一鍵來過濾
           let parsedArr = Array.from(set).map(str => JSON.parse(str));
-          window.restockLocsCache.set(key, parsedArr);
+          let uniquePalletsMap = new Map();
+          parsedArr.forEach(p => {
+              if (p.pallet && p.pallet !== "-") {
+                  // 如果同一個棧板有多筆，數量累加，任務號保留第一個
+                  if (uniquePalletsMap.has(p.pallet)) {
+                      let existing = uniquePalletsMap.get(p.pallet);
+                      existing.qty = (parseFloat(existing.qty) || 0) + (parseFloat(p.qty) || 0);
+                  } else {
+                      uniquePalletsMap.set(p.pallet, { ...p });
+                  }
+              }
+          });
+          window.restockLocsCache.set(key, Array.from(uniquePalletsMap.values()));
       });
 
       let msgEl = document.getElementById('mapMsgArea');
@@ -1877,7 +1893,17 @@
             let col = headerCols[cIdx]; let lvl = parseInt(colB, 10);
             let targetKey = `${currentRowGroup}-${col}-${lvl}`;
             let isRestockTarget = restockLocs.has(targetKey);
-            let palletCount = isRestockTarget ? restockLocs.get(targetKey).size : 0;
+            
+            // 核心修改：動態提取唯一的棧板數 (COUNTUNIQUE PL)
+            let palletCount = 0;
+            if (isRestockTarget) {
+                let uniquePls = new Set();
+                restockLocs.get(targetKey).forEach(str => {
+                    let p = JSON.parse(str).pallet;
+                    if (p && p !== "-") uniquePls.add(p);
+                });
+                palletCount = uniquePls.size;
+            }
 
             let bayStr = window.getBayFor(currentRowGroupStr, col);
             let originalLoc = `${String(currentRowGroupStr).padStart(2, '0')}${bayStr}${String(col).padStart(3, '0')}${String(lvl).padStart(2, '0')}`;
@@ -1900,7 +1926,8 @@
               innerHTML += `<span class="cell-pallet" style="color:rgba(255,255,255,0.1); text-shadow:none;">.</span>`;
             }
             
-            let palletArr = isRestockTarget ? Array.from(restockLocs.get(targetKey)).map(str => JSON.parse(str)) : [];
+            // 點擊彈窗內顯示的資料，我們直接給上面快取去重過的資料
+            let palletArr = isRestockTarget ? window.restockLocsCache.get(targetKey) : [];
             let encodedData = encodeURIComponent(JSON.stringify(palletArr));
             let displayLoc = `${String(currentRowGroupStr).padStart(2, '0')}-${bayStr}-${String(col).padStart(3, '0')}-${String(lvl).padStart(2, '0')}`;
             
