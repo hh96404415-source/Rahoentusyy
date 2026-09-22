@@ -86,13 +86,13 @@
 
     .search-box { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
     
-    input[type="text"] {
+    input[type="text"], input[type="password"] {
       flex: 1; min-width: 50px; padding: 8px 12px; font-size: 16px !important;
       background-color: var(--bg-deep); color: var(--text-main); 
       border: 1px solid var(--bg-hover); border-radius: 6px; 
       font-family: 'Roboto Mono', monospace;
     }
-    input[type="text"]:focus {
+    input[type="text"]:focus, input[type="password"]:focus {
       outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
     }
 
@@ -265,8 +265,8 @@
     .d-pad-container {
         display: grid; 
         grid-template-areas: 
-            ". up ."
-            "left down right";
+          ". up ."
+          "left down right";
         gap: 2px; 
         background: rgba(0,0,0,0.4); 
         padding: 3px; 
@@ -310,7 +310,6 @@
         display: inline-block;
     }
 
-    /* GOH Multi-level filters styling - 改回電腦友善的自動換行 (Wrap) */
     .goh-filter-row {
         display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);
     }
@@ -554,6 +553,7 @@
     <div class="summary-box-compact" id="recSummaryBox" style="display: none;">
       <div class="summary-item-compact">ROWS:<span id="totRecRows">0</span></div>
       <div class="summary-item-compact">UPD:<span id="totRecUpd" style="color:var(--accent-cyan);">0</span></div>
+      <div class="summary-item-compact">PRED:<span id="totRecPred" style="color:#d946ef; font-weight:700;">0</span></div>
       <div class="summary-item-compact">SCND:<span id="totRecScnd" class="text-green">0</span></div>
       <div class="summary-item-compact text-red">-SCN:<span id="totRecScn" class="text-red">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
@@ -623,7 +623,8 @@
   <div id="uphView" class="view-section" style="display: none;">
     <div id="uphMsgArea" class="message"></div>
     <div class="summary-box-compact" id="uphSummaryBox" style="display: none;">
-      <div class="summary-item-compact">ROWS:<span id="totUphRows">0</span></div>
+      <div class="summary-item-compact">TDC:<span id="totUphTdc" style="color:var(--accent-blue); font-weight:700;">0</span></div>
+      <div class="summary-item-compact">PRED:<span id="totUphPred" style="color:#d946ef; font-weight:700;">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
         <span id="lastUphRefreshedTime" style="font-size: 10px; color: var(--text-muted); font-family:'Roboto Mono';">--:--</span>
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
@@ -1376,6 +1377,85 @@
     if (activeGaoFilters.size === 0) { rows.forEach(r => r.style.display = ''); totalRows.forEach(r => r.style.display = ''); } else { rows.forEach(r => { let isVisible = false; if (activeGaoFilters.has('GOH') && r.classList.contains('cat-goh')) isVisible = true; if (activeGaoFilters.has('FTW') && r.classList.contains('cat-ftw')) isVisible = true; if (activeGaoFilters.has('ACC') && r.classList.contains('cat-acc')) isVisible = true; if (activeGaoFilters.has('BDW') && r.classList.contains('cat-bdw')) isVisible = true; if (activeGaoFilters.has('OTH') && r.classList.contains('cat-oth')) isVisible = true; r.style.display = isVisible ? '' : 'none'; }); totalRows.forEach(r => r.style.display = 'none'); }
   }
 
+  // --- 共用的 UPH 預測數值計算邏輯 ---
+  function updateSharedPredValue(res) {
+    let todayPred = 0;
+    let todayTdc = 0;
+
+    if (res && res.data && res.data.length > 0 && res.headers) {
+      let lastRow = res.data[0]; 
+      
+      let tdcCol = res.headers.find(c => String(c).toUpperCase().includes("TDC") || String(c).toUpperCase().includes("TOTAL"));
+      if (tdcCol) todayTdc = parseInt(lastRow[tdcCol], 10) || 0;
+
+      let timeCols = res.headers.filter(c => {
+        let upperC = String(c).toUpperCase();
+        if (upperC.includes("DATE") || upperC.includes("日期") || upperC.includes("TDC") || upperC.includes("TOTAL") || upperC.includes("REMARK")) return false;
+        
+        let colNum = parseInt(c, 10);
+        if (!isNaN(colNum) && colNum >= 18) {
+           let val = parseInt(lastRow[c], 10);
+           if (isNaN(val) || val <= 0) return false; 
+        }
+        return true;
+      });
+
+      if (timeCols.length > 0) {
+        let totalMinutes = 0;
+        let elapsedMinutes = 0;
+        let cumulativeQty = 0;
+        
+        let lastActiveIndex = -1;
+        for (let i = timeCols.length - 1; i >= 0; i--) {
+          let val = parseInt(lastRow[timeCols[i]], 10);
+          if (!isNaN(val) && val > 0) {
+            lastActiveIndex = i;
+            break;
+          }
+        }
+
+        timeCols.forEach((col, idx) => {
+           let colStr = String(col).replace(/\s/g, '').toUpperCase();
+           let isFirst = (idx === 0);
+           let isLast = (idx === timeCols.length - 1);
+           
+           let isLunch = (/^13$|13.*14|13:00|1300|1-2|LUNCH|吃飯/i.test(colStr)) && !(/12.*13/i.test(colStr)); 
+
+           let slotMinutes = 60;
+           if (isLunch) slotMinutes = 0;
+           else if (isFirst) slotMinutes = 40;
+           else if (isLast) slotMinutes = 40;
+
+           totalMinutes += slotMinutes;
+
+           if (idx <= lastActiveIndex) {
+             elapsedMinutes += slotMinutes;
+             let qty = parseInt(lastRow[col], 10) || 0;
+             cumulativeQty += qty;
+           }
+        });
+
+        if (elapsedMinutes > 0 && cumulativeQty > 0) {
+           let upm = cumulativeQty / Math.max(1, elapsedMinutes);
+           todayPred = Math.round(upm * totalMinutes);
+        } else {
+           todayPred = todayTdc; 
+        }
+      }
+    }
+
+    // 同步更新所有相關 UI 元素
+    let elUphTdc = document.getElementById('totUphTdc');
+    if (elUphTdc) elUphTdc.textContent = todayTdc;
+    
+    let elUphPred = document.getElementById('totUphPred');
+    if (elUphPred) elUphPred.textContent = todayPred;
+    
+    let elRecPred = document.getElementById('totRecPred');
+    if (elRecPred) elRecPred.textContent = todayPred;
+  }
+  // --- 結束共用邏輯 ---
+
   function loadRecDataList() {
     let timer = startLoadingMsg('recMsgArea', 'REC STAT');
     window.google.script.run.withSuccessHandler((res) => { 
@@ -1395,6 +1475,11 @@
         }
       }
     }).getDbData();
+
+    // 背景獲取 UPH 數據以更新 REC 頁面上的 PRED 預測值
+    window.google.script.run.withSuccessHandler((uphRes) => {
+        updateSharedPredValue(uphRes);
+    }).getUphData();
   }
 
   let globalRecListForQr = [];
@@ -2058,14 +2143,32 @@
     document.getElementById('lpSummaryBox').style.display = "flex"; document.getElementById('lpTableContainer').innerHTML = h;
   }
 
+  function renderUphData(res) {
+    let h = `<table class="compact-table"><thead><tr>`; 
+    (res.headers || []).forEach(c => h+=`<th>${c}</th>`); 
+    h+=`</tr></thead><tbody>`;
+    
+    // 執行共用的預測計算並更新標籤
+    updateSharedPredValue(res);
+
+    (res.data||[]).forEach(i => { 
+      h+=`<tr>`; 
+      (res.headers || []).forEach(c => { 
+        let v = i[c] !== undefined ? i[c] : ""; 
+        if (v === 0 || String(v).trim() === "0") v = ""; 
+        h+=`<td>${v}</td>`; 
+      }); 
+      h+=`</tr>`; 
+    }); 
+    h+=`</tbody></table>`; 
+    
+    document.getElementById('uphSummaryBox').style.display = "flex"; 
+    document.getElementById('uphTableContainer').innerHTML = h;
+  }
+
   function loadUphData() {
     let timer = startLoadingMsg('uphMsgArea', 'UPH STAT');
     window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('uphMsgArea', timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime'); renderUphData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('uphMsgArea', timer); document.getElementById('uphMsgArea').textContent="ERROR:"+e.message; }).getUphData();
-  }
-
-  function renderUphData(res) {
-    document.getElementById('totUphRows').textContent = res.rowCount||0;
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${c}</th>`); h+=`</tr></thead><tbody>`; (res.data||[]).forEach(i => { h+=`<tr>`; (res.headers || []).forEach(c => { let v = i[c] !== undefined ? i[c] : ""; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td>${v}</td>`; }); h+=`</tr>`; }); h+=`</tbody></table>`; document.getElementById('uphSummaryBox').style.display = "flex"; document.getElementById('uphTableContainer').innerHTML = h;
   }
 
   let globalGohData = [];
