@@ -414,6 +414,17 @@
   </div>
 </div>
 
+<!-- 專為長者設計的掃描大字體彈窗 -->
+<div id="stLargePopupOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeStLargePopup(event)">
+  <div class="glass-box" style="border-color: var(--status-yellow); max-width: 90%; width: 400px; padding: 30px 20px;" onclick="event.stopPropagation();">
+    <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 2px;">LOCATION</div>
+    <div id="stLargeLoc" style="color: #fff; font-size: 64px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 1.1; margin-bottom: 24px;">ST001</div>
+    <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 4px; letter-spacing: 2px;">PALLETS</div>
+    <div id="stLargePlCount" style="color: var(--status-yellow); font-size: 120px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 0 25px rgba(251,191,36,0.5); line-height: 1; margin-bottom: 30px;">0</div>
+    <button class="primary-btn" style="width: 100%; padding: 20px; font-size: 24px !important; border-radius: 12px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);" onclick="closeStLargePopup()">確 認 (OK)</button>
+  </div>
+</div>
+
 <div class="container" id="mainContainer" style="display: none;">
   
   <div class="sys-header">
@@ -2521,7 +2532,7 @@
       r.style.display = 'block'; btn.style.display = 'block';
       if (!stHtml5QrCode) stHtml5QrCode = new Html5Qrcode("stReader"); 
       stHtml5QrCode.start( { facingMode: "environment" }, { fps: 10 },
-        (text) => { document.getElementById('stLocInput').value = text; stopStLocationScanner(); handleStLocInput(); }, () => {}
+        (text) => { document.getElementById('stLocInput').value = text; stopStLocationScanner(); handleStLocInput(true); }, () => {}
       ).catch(e => { alert("CAMERA ERROR: " + e); stopStLocationScanner(); });
   }
   
@@ -2531,20 +2542,36 @@
       else { r.style.display='none'; btn.style.display='none'; }
   }
 
-  function handleStLocInput() {
+  function handleStLocInput(isFromCamera = false) {
       let val = document.getElementById('stLocInput').value.trim().toUpperCase();
       if (!val) return;
       
       if (/^\d+$/.test(val)) {
-          // 如果輸入的是純數字，自動補足 3 位數，並加上 STAGE 前綴
           val = "STAGE" + val.padStart(3, '0');
       } else if (val.startsWith('ST') && !val.startsWith('STAGE')) {
-          // 原有防呆：如果輸入 ST 開頭，替換為 STAGE
           val = val.replace('ST', 'STAGE');
       }
       
       filterSt(val);
       document.getElementById('stLocInput').value = ""; 
+
+      if (isFromCamera) {
+          let uniquePls = new Set();
+          globalStData.forEach(i => {
+              if (String(i["LOCATION_ID"] || "").toUpperCase() === val) {
+                  let pallet = String(i["Pallet ID"] || "").trim();
+                  if (pallet && pallet !== "-") uniquePls.add(pallet);
+              }
+          });
+          document.getElementById('stLargeLoc').textContent = val.replace(/STAGE/ig, "ST");
+          document.getElementById('stLargePlCount').textContent = uniquePls.size;
+          document.getElementById('stLargePopupOverlay').style.display = 'flex';
+      }
+  }
+
+  function closeStLargePopup(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('stLargePopupOverlay').style.display = 'none';
   }
 
   function loadStDataList() {
