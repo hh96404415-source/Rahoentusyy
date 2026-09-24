@@ -418,10 +418,13 @@
 <div id="stLargePopupOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeStLargePopup(event)">
   <div class="glass-box" style="border-color: var(--status-yellow); max-width: 90%; width: 400px; padding: 30px 20px;" onclick="event.stopPropagation();">
     <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 2px;">LOCATION</div>
-    <div id="stLargeLoc" style="color: #fff; font-size: 64px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 1.1; margin-bottom: 24px;">ST001</div>
+    <div id="stLargeLoc" style="color: #fff; font-size: 56px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 1.1; margin-bottom: 24px; word-break: break-all;">STAGE001</div>
     <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 4px; letter-spacing: 2px;">PALLETS</div>
     <div id="stLargePlCount" style="color: var(--status-yellow); font-size: 120px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 0 25px rgba(251,191,36,0.5); line-height: 1; margin-bottom: 30px;">0</div>
-    <button class="primary-btn" style="width: 100%; padding: 20px; font-size: 24px !important; border-radius: 12px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);" onclick="closeStLargePopup()">確 認 (OK)</button>
+    <div style="display: flex; gap: 10px; width: 100%;">
+      <button style="flex: 1; padding: 16px 8px; font-size: 16px !important; border-radius: 12px; background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="scanNextStLoc()"><i class="ph ph-camera"></i> 繼續掃描</button>
+      <button class="primary-btn" style="flex: 1; padding: 16px 8px; font-size: 18px !important; border-radius: 12px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4); display: flex; align-items: center; justify-content: center;" onclick="closeStLargePopup()">確 認 (OK)</button>
+    </div>
   </div>
 </div>
 
@@ -668,7 +671,7 @@
       <!-- 緊湊型內嵌搜尋框 -->
       <div style="display:flex; gap:2px; align-items:center; padding-right:6px; margin-right:4px; border-right:1px solid rgba(255,255,255,0.1);">
         <input type="text" id="stLocInput" placeholder="ST..." onkeydown="if(event.key === 'Enter') handleStLocInput()" onfocus="this.style.borderColor='var(--accent-cyan)'" onblur="this.style.borderColor='var(--border-light)'" style="width: 55px; min-width: 55px; padding: 2px 4px; font-size: 13px !important; height: 24px; border-radius: 4px; margin: 0; background: var(--bg-deep); color: var(--text-main); border: 1px solid var(--border-light); font-family: 'Roboto Mono', monospace; outline: none; transition: all 0.2s;">
-        <button id="stScanLocBtn" class="icon-btn btn-camera" onclick="startStLocationScanner()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
+        <button id="stScanLocBtn" class="icon-btn btn-camera" onclick="startStLocationScanner()" style="min-width: 48px; max-width: 48px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; display:flex; align-items:center; justify-content:center;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
         <button class="primary-btn icon-btn" onclick="handleStLocInput()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-magnifying-glass" style="font-size:14px;"></i></button>
       </div>
 
@@ -2563,7 +2566,7 @@
                   if (pallet && pallet !== "-") uniquePls.add(pallet);
               }
           });
-          document.getElementById('stLargeLoc').textContent = val.replace(/STAGE/ig, "ST");
+          document.getElementById('stLargeLoc').textContent = val;
           document.getElementById('stLargePlCount').textContent = uniquePls.size;
           document.getElementById('stLargePopupOverlay').style.display = 'flex';
       }
@@ -2572,6 +2575,11 @@
   function closeStLargePopup(e) {
       if (e && e.target !== e.currentTarget) return;
       document.getElementById('stLargePopupOverlay').style.display = 'none';
+  }
+
+  function scanNextStLoc() {
+      document.getElementById('stLargePopupOverlay').style.display = 'none';
+      startStLocationScanner();
   }
 
   function loadStDataList() {
