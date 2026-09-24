@@ -649,8 +649,18 @@
 
   <!-- ST View -->
   <div id="stView" class="view-section" style="display: none;">
+    <div id="stReader" class="camera-wrapper" style="display:none; margin-bottom: 4px;"></div>
+    <button id="stopStScanLocBtn" style="display:none; width: 100%; margin-bottom: 8px; background: var(--bg-hover);" onclick="stopStLocationScanner()">CLOSE CAMERA</button>
+
     <div id="stMsgArea" class="message"></div>
     <div class="summary-box-compact" id="stSummaryBox" style="display: none;">
+      <!-- 緊湊型內嵌搜尋框 -->
+      <div style="display:flex; gap:2px; align-items:center; padding-right:6px; margin-right:4px; border-right:1px solid rgba(255,255,255,0.1);">
+        <input type="text" id="stLocInput" placeholder="ST..." onkeydown="if(event.key === 'Enter') handleStLocInput()" onfocus="this.style.borderColor='var(--accent-cyan)'" onblur="this.style.borderColor='var(--border-light)'" style="width: 55px; min-width: 55px; padding: 2px 4px; font-size: 13px !important; height: 24px; border-radius: 4px; margin: 0; background: var(--bg-deep); color: var(--text-main); border: 1px solid var(--border-light); font-family: 'Roboto Mono', monospace; outline: none; transition: all 0.2s;">
+        <button id="stScanLocBtn" class="icon-btn btn-camera" onclick="startStLocationScanner()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
+        <button class="primary-btn icon-btn" onclick="handleStLocInput()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-magnifying-glass" style="font-size:14px;"></i></button>
+      </div>
+
       <div class="summary-item-compact">ROWS:<span id="totStRows">0</span></div>
       <div class="summary-item-compact">PL:<span id="totStQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
@@ -1001,6 +1011,7 @@
   }
 
   let html5QrCode = null; let barcodeHtml5QrCode = null; let pendingBarcode = null; let lastDetected = null;
+  let stHtml5QrCode = null;
   
   let isStHideEmpty = true;
 
@@ -2143,12 +2154,94 @@
     document.getElementById('lpSummaryBox').style.display = "flex"; document.getElementById('lpTableContainer').innerHTML = h;
   }
 
+  // --- 共用的 UPH 預測數值計算邏輯 ---
+  function updateSharedPredValue(res) {
+    let todayPred = 0;
+    let todayTdc = 0;
+
+    if (res && res.data && res.data.length > 0 && res.headers) {
+      let lastRow = res.data[0]; 
+      
+      let tdcCol = res.headers.find(c => String(c).toUpperCase().includes("TDC") || String(c).toUpperCase().includes("TOTAL"));
+      if (tdcCol) todayTdc = parseInt(lastRow[tdcCol], 10) || 0;
+
+      let timeCols = res.headers.filter(c => {
+        let upperC = String(c).toUpperCase();
+        if (upperC.includes("DATE") || upperC.includes("日期") || upperC.includes("TDC") || upperC.includes("TOTAL") || upperC.includes("REMARK")) return false;
+        
+        let colNum = parseInt(c, 10);
+        if (!isNaN(colNum) && colNum >= 18) {
+           let val = parseInt(lastRow[c], 10);
+           if (isNaN(val) || val <= 0) return false; 
+        }
+        return true;
+      });
+
+      if (timeCols.length > 0) {
+        let totalMinutes = 0;
+        let elapsedMinutes = 0;
+        let cumulativeQty = 0;
+        
+        let lastActiveIndex = -1;
+        for (let i = timeCols.length - 1; i >= 0; i--) {
+          let val = parseInt(lastRow[timeCols[i]], 10);
+          if (!isNaN(val) && val > 0) {
+            lastActiveIndex = i;
+            break;
+          }
+        }
+
+        timeCols.forEach((col, idx) => {
+           let colStr = String(col).replace(/\s/g, '').toUpperCase();
+           let isFirst = (idx === 0);
+           let isLast = (idx === timeCols.length - 1);
+           
+           let isLunch = (/13.*14|13:00|1300|1-2|LUNCH|吃飯|^13$/i.test(colStr)) && !(/12.*13/i.test(colStr)); 
+
+           let slotMinutes = 60;
+           if (isLunch) slotMinutes = 0;
+           else if (isFirst) slotMinutes = 40;
+           else if (isLast) slotMinutes = 40;
+
+           totalMinutes += slotMinutes;
+
+           if (idx <= lastActiveIndex) {
+             elapsedMinutes += slotMinutes;
+             let qty = parseInt(lastRow[col], 10) || 0;
+             cumulativeQty += qty;
+           }
+        });
+
+        if (elapsedMinutes > 0 && cumulativeQty > 0) {
+           let upm = cumulativeQty / Math.max(1, elapsedMinutes);
+           todayPred = Math.round(upm * totalMinutes);
+        } else {
+           todayPred = todayTdc; 
+        }
+      }
+    }
+
+    let elUphTdc = document.getElementById('totUphTdc');
+    if (elUphTdc) elUphTdc.textContent = todayTdc;
+    
+    let elUphPred = document.getElementById('totUphPred');
+    if (elUphPred) elUphPred.textContent = todayPred;
+    
+    let elRecPred = document.getElementById('totRecPred');
+    if (elRecPred) elRecPred.textContent = todayPred;
+  }
+  // --- 結束共用邏輯 ---
+
+  function loadUphData() {
+    let timer = startLoadingMsg('uphMsgArea', 'UPH STAT');
+    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('uphMsgArea', timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime'); renderUphData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('uphMsgArea', timer); document.getElementById('uphMsgArea').textContent="ERROR:"+e.message; }).getUphData();
+  }
+
   function renderUphData(res) {
     let h = `<table class="compact-table"><thead><tr>`; 
     (res.headers || []).forEach(c => h+=`<th>${c}</th>`); 
     h+=`</tr></thead><tbody>`;
     
-    // 執行共用的預測計算並更新標籤
     updateSharedPredValue(res);
 
     (res.data||[]).forEach(i => { 
@@ -2164,11 +2257,6 @@
     
     document.getElementById('uphSummaryBox').style.display = "flex"; 
     document.getElementById('uphTableContainer').innerHTML = h;
-  }
-
-  function loadUphData() {
-    let timer = startLoadingMsg('uphMsgArea', 'UPH STAT');
-    window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('uphMsgArea', timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime'); renderUphData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('uphMsgArea', timer); document.getElementById('uphMsgArea').textContent="ERROR:"+e.message; }).getUphData();
   }
 
   let globalGohData = [];
@@ -2428,6 +2516,37 @@
       });
   }
 
+  function startStLocationScanner() {
+      const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
+      r.style.display = 'block'; btn.style.display = 'block';
+      if (!stHtml5QrCode) stHtml5QrCode = new Html5Qrcode("stReader"); 
+      stHtml5QrCode.start( { facingMode: "environment" }, { fps: 10 },
+        (text) => { document.getElementById('stLocInput').value = text; stopStLocationScanner(); handleStLocInput(); }, () => {}
+      ).catch(e => { alert("CAMERA ERROR: " + e); stopStLocationScanner(); });
+  }
+  
+  function stopStLocationScanner() {
+      const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
+      if (stHtml5QrCode && stHtml5QrCode.isScanning) stHtml5QrCode.stop().then(()=>{r.style.display='none';btn.style.display='none';});
+      else { r.style.display='none'; btn.style.display='none'; }
+  }
+
+  function handleStLocInput() {
+      let val = document.getElementById('stLocInput').value.trim().toUpperCase();
+      if (!val) return;
+      
+      if (/^\d+$/.test(val)) {
+          // 如果輸入的是純數字，自動補足 3 位數，並加上 STAGE 前綴
+          val = "STAGE" + val.padStart(3, '0');
+      } else if (val.startsWith('ST') && !val.startsWith('STAGE')) {
+          // 原有防呆：如果輸入 ST 開頭，替換為 STAGE
+          val = val.replace('ST', 'STAGE');
+      }
+      
+      filterSt(val);
+      document.getElementById('stLocInput').value = ""; 
+  }
+
   function loadStDataList() {
     let timer = startLoadingMsg('stMsgArea', 'ST INVENTORY');
     window.google.script.run.withSuccessHandler((invRes) => {
@@ -2462,7 +2581,7 @@
       filterGroup.style.gap = "4px";
       filterGroup.style.marginBottom = "4px";
 
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterSt('ALL')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-muted); font-size:10px;">(${totalStPallets.size})</span></button>`;
+      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterSt('ALL')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-main); font-size:13px; font-weight:700;">(${totalStPallets.size})</span></button>`;
       
       let eyeIcon = isStHideEmpty ? '<i class="ph ph-eye-slash"></i>' : '<i class="ph ph-eye"></i>';
       let eyeStyle = isStHideEmpty ? 'color:var(--status-yellow); border-color:var(--status-yellow);' : 'color:var(--text-muted); border-color:var(--border-light);';
@@ -2472,7 +2591,7 @@
       uniqueLocs.forEach(loc => {
           let palletCount = locPalletMap.get(loc).size;
           let displayLoc = loc.replace(/STAGE/ig, "ST");
-          fHtml += `<button class="filter-btn-compact st-loc-btn" data-loc="${loc}" onclick="filterSt('${loc}')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${displayLoc} <span style="color:var(--text-muted); font-size:10px;">(${palletCount})</span></button>`;
+          fHtml += `<button class="filter-btn-compact st-loc-btn" data-loc="${loc}" onclick="filterSt('${loc}')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${displayLoc} <span style="color:var(--text-main); font-size:13px; font-weight:700;">(${palletCount})</span></button>`;
       });
       filterGroup.innerHTML = fHtml;
 
@@ -2508,13 +2627,25 @@
         <th>LOC</th><th>PL</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
       </tr></thead><tbody>`;
 
-      globalStData.forEach(i => {
-        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
-        if (activeStFilter !== 'ALL' && loc !== activeStFilter) return;
+      let filteredData = globalStData.filter(i => {
+          let loc = String(i["LOCATION_ID"] || "").toUpperCase();
+          if (activeStFilter !== 'ALL' && loc !== activeStFilter) return false;
+          return true;
+      });
 
+      filteredData.sort((a, b) => {
+          let plA = String(a["Pallet ID"] || "").trim();
+          let plB = String(b["Pallet ID"] || "").trim();
+          return plA.localeCompare(plB);
+      });
+
+      let prevPl = null;
+
+      filteredData.forEach(i => {
+        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
         let tag = i["TAG_ID"] || "";
         let coo = i["User Def Type 1"] || "";
-        let pallet = i["Pallet ID"] || "";
+        let pallet = String(i["Pallet ID"] || "").trim();
         
         let receipt = "";
         let size = "";
@@ -2550,9 +2681,15 @@
         
         let displayLoc = loc.replace(/STAGE/ig, "ST");
 
+        let displayHtml = formatDbPalletStr(pallet);
+        if (pallet !== "" && pallet !== "-" && pallet === prevPl) {
+            displayHtml = `<span style="color: rgba(255,255,255,0.15); font-weight: normal;">${pallet}</span>`;
+        }
+        prevPl = pallet; 
+
         h += `<tr>
           <td>${displayLoc}</td>
-          <td style="font-family:'Roboto Mono', monospace;">${formatDbPalletStr(pallet)}</td>
+          <td style="font-family:'Roboto Mono', monospace;">${displayHtml}</td>
           <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
           <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
           <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
