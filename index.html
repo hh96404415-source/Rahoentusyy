@@ -145,10 +145,10 @@
     .text-yellow { color: var(--status-yellow) !important; }
 
     .camera-wrapper {
-        width: 100%; max-height: 240px; border-radius: 6px; overflow: hidden; background: #000;
+        width: 100%; max-height: 140px; border-radius: 6px; overflow: hidden; background: #000;
         margin-bottom: 8px; border: 1px solid var(--bg-hover); position: relative;
     }
-    .camera-wrapper video { width: 100% !important; height: 240px !important; object-fit: cover !important; }
+    .camera-wrapper video { width: 100% !important; height: 140px !important; object-fit: cover !important; }
     
     .card-list { display: flex; flex-direction: column; gap: 8px; }
     .inventory-card { 
@@ -324,7 +324,6 @@
 
 <div id="pinLoginOverlay" class="glass-overlay">
   <div class="glass-box" style="border-color: rgba(56,189,248,0.3); box-shadow: 0 0 30px rgba(56,189,248,0.1); max-width: 340px;">
-    <!-- 手機觸控友善的 God Mode 點擊觸發區 -->
     <div id="devGodModeBtn" style="position: absolute; bottom: 0; left: 0; width: 100px; height: 100px; cursor: pointer; z-index: 10; touch-action: manipulation;" onclick="handleGodModeClick()"></div>
     <div class="pin-title"><i class="ph ph-lock-key"></i> SYSTEM LOCKED</div>
     <div class="pin-subtitle">Awaiting Authorization_</div>
@@ -414,7 +413,6 @@
   </div>
 </div>
 
-<!-- 專為長者設計的掃描大字體彈窗 -->
 <div id="stLargePopupOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeStLargePopup(event)">
   <div class="glass-box" style="border-color: var(--status-yellow); max-width: 90%; width: 400px; padding: 30px 20px;" onclick="event.stopPropagation();">
     <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 2px;">LOCATION</div>
@@ -668,7 +666,6 @@
 
     <div id="stMsgArea" class="message"></div>
     <div class="summary-box-compact" id="stSummaryBox" style="display: none;">
-      <!-- 緊湊型內嵌搜尋框 -->
       <div style="display:flex; gap:2px; align-items:center; padding-right:6px; margin-right:4px; border-right:1px solid rgba(255,255,255,0.1);">
         <input type="text" id="stLocInput" placeholder="ST..." onkeydown="if(event.key === 'Enter') handleStLocInput()" onfocus="this.style.borderColor='var(--accent-cyan)'" onblur="this.style.borderColor='var(--border-light)'" style="width: 55px; min-width: 55px; padding: 2px 4px; font-size: 13px !important; height: 24px; border-radius: 4px; margin: 0; background: var(--bg-deep); color: var(--text-main); border: 1px solid var(--border-light); font-family: 'Roboto Mono', monospace; outline: none; transition: all 0.2s;">
         <button id="stScanLocBtn" class="icon-btn btn-camera" onclick="startStLocationScanner()" style="min-width: 48px; max-width: 48px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; display:flex; align-items:center; justify-content:center;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
@@ -1024,9 +1021,11 @@
     else { document.getElementById('msgArea').textContent = "UNAUTHORIZED ACCESS."; }
   }
 
-  let html5QrCode = null; let barcodeHtml5QrCode = null; let pendingBarcode = null; let lastDetected = null;
+  let html5QrCode = null; 
+  let barcodeHtml5QrCode = null; 
+  let pendingBarcode = null; 
+  let lastDetected = null;
   let stHtml5QrCode = null;
-  
   let isStHideEmpty = true;
 
   function startLocationScanner() {
@@ -1034,14 +1033,22 @@
     r.style.display = 'block'; btn.style.display = 'block';
     if (!html5QrCode) html5QrCode = new Html5Qrcode("reader"); 
     
-    const successCb = (text) => { document.getElementById('auditLocInput').value = text; stopLocationScanner(); startAuditSession(); };
-    
-    html5QrCode.start( { facingMode: "environment", advanced: [{ focusMode: "continuous" }] }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10 },
+      (text) => { 
+        document.getElementById('auditLocInput').value = text; 
+        stopLocationScanner(); 
+        startAuditSession(); 
+      }, 
+      () => {}
     ).catch(e => { 
-        html5QrCode.start( { facingMode: "environment" }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
-        ).catch(err => { alert("CAMERA ERROR: " + err); stopLocationScanner(); });
+      const msg = document.getElementById('auditMsgArea');
+      if (msg) msg.textContent = "CAMERA ERROR: " + (e.message || e);
+      stopLocationScanner(); 
     });
   }
+
   function stopLocationScanner() {
     const r = document.getElementById('reader'); const btn = document.getElementById('stopScanLocBtn');
     if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().then(()=>{r.style.display='none';btn.style.display='none';});
@@ -1054,19 +1061,23 @@
     if (!barcodeHtml5QrCode) barcodeHtml5QrCode = new Html5Qrcode("barcodeReader"); 
     lastDetected = null; pendingBarcode = null;
 
-    const successCb = (text) => {
+    barcodeHtml5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10 },
+      (text) => {
         const cleanCode = text.trim().toUpperCase();
         if (pendingBarcode === cleanCode || lastDetected === cleanCode) return;
         lastDetected = cleanCode; pendingBarcode = cleanCode;
         playScanSound('pending'); triggerVibration(60); confirmBarcodeScan();
-    };
-
-    barcodeHtml5QrCode.start( { facingMode: "environment", advanced: [{ focusMode: "continuous" }] }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
+      }, 
+      () => {}
     ).catch(e => { 
-        barcodeHtml5QrCode.start( { facingMode: "environment" }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
-        ).catch(err => { alert("CAMERA ERROR: " + err); stopBarcodeScanner(); });
+      const msg = document.getElementById('auditMsgArea');
+      if (msg) msg.textContent = "CAMERA ERROR: " + (e.message || e);
+      stopBarcodeScanner(); 
     });
   }
+
   function stopBarcodeScanner() {
     const r = document.getElementById('barcodeReader'); const btn = document.getElementById('stopBarcodeScanBtn');
     pendingBarcode = null; lastDetected = null;
@@ -1080,6 +1091,33 @@
     setTimeout(() => { if (lastDetected === code) lastDetected = null; }, 1000);
     const inputEl = document.getElementById('auditScanInput');
     inputEl.value = code; processScannedCode(code); inputEl.value = ""; inputEl.focus();
+  }
+
+  function startStLocationScanner() {
+    const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
+    r.style.display = 'block'; btn.style.display = 'block';
+    if (!stHtml5QrCode) stHtml5QrCode = new Html5Qrcode("stReader"); 
+    
+    stHtml5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10 },
+      (text) => { 
+        document.getElementById('stLocInput').value = text; 
+        stopStLocationScanner(); 
+        handleStLocInput(true); 
+      }, 
+      () => {}
+    ).catch(e => { 
+      const msg = document.getElementById('stMsgArea');
+      if (msg) msg.textContent = "CAMERA ERROR: " + (e.message || e);
+      stopStLocationScanner(); 
+    });
+  }
+
+  function stopStLocationScanner() {
+    const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
+    if (stHtml5QrCode && stHtml5QrCode.isScanning) stHtml5QrCode.stop().then(()=>{r.style.display='none';btn.style.display='none';});
+    else { r.style.display='none'; btn.style.display='none'; }
   }
 
   const COUNTRY_FLAG_CODES = { "RUS": "ru", "USA": "us", "JPN": "jp", "CAN": "ca", "MEX": "mx", "AUS": "au", "KOR": "kr", "MAC": "mo", "TWN": "tw", "CHN": "cn", "HKG": "hk", "IDN": "id", "BRA": "br", "THA": "th", "KWT": "kw", "ARE": "ae", "SAU": "sa", "BHR": "bh", "SGP": "sg", "MYS": "my", "QAT": "qa", "KHM": "kh", "UZB": "uz", "PAK": "pk", "VNM": "vn", "PHL": "ph", "ISR": "il", "SUR": "sr", "GTM": "gt", "ARM": "am", "IND": "in", "KAZ": "kz", "MMR": "mm", "UKR": "ua", "ITA": "it", "ZAF": "za", "PRY": "py", "EGY": "eg", "LBN": "lb", "CHL": "cl", "VEN": "ve", "MUS": "mu", "URY": "uy", "COL": "co" };
@@ -1348,7 +1386,7 @@
     (res.data||[]).forEach(i => {
       let isT = (res.headers || []).some(c=>String(i[c]||"").trim().toUpperCase().includes("TOTAL")); 
       let planValue = planKey ? String(i[planKey] || "").trim().toUpperCase() : ""; 
-      let isPlanN = (planValue.charAt(0) === "N"); // Modified to check only first letter
+      let isPlanN = (planValue.charAt(0) === "N");
       let pcValue = pcKey ? String(i[pcKey] || "").trim().toUpperCase() : ""; 
       let genderValue = genderKey ? String(i[genderKey] || "").trim().toUpperCase() : "";
       
@@ -1381,7 +1419,7 @@
         
         if (c === soKey && !isT) { v = String(v).replace(/^GAO-/i, ''); }
         if (isT && colIndex === 0) { v = String(v).replace(/\s*Total/ig, ''); }
-        if (c === planKey && !isT && v) { v = String(v).trim().charAt(0).toUpperCase(); } // Keep only first letter
+        if (c === planKey && !isT && v) { v = String(v).trim().charAt(0).toUpperCase(); }
 
         h+=`<td class="${cls.trim()}" style="${tdStyle}">${v}</td>`; 
       }); 
@@ -1412,7 +1450,6 @@
     if (activeGaoFilters.size === 0) { rows.forEach(r => r.style.display = ''); totalRows.forEach(r => r.style.display = ''); } else { rows.forEach(r => { let isVisible = false; if (activeGaoFilters.has('GOH') && r.classList.contains('cat-goh')) isVisible = true; if (activeGaoFilters.has('FTW') && r.classList.contains('cat-ftw')) isVisible = true; if (activeGaoFilters.has('ACC') && r.classList.contains('cat-acc')) isVisible = true; if (activeGaoFilters.has('BDW') && r.classList.contains('cat-bdw')) isVisible = true; if (activeGaoFilters.has('OTH') && r.classList.contains('cat-oth')) isVisible = true; r.style.display = isVisible ? '' : 'none'; }); totalRows.forEach(r => r.style.display = 'none'); }
   }
 
-  // --- 共用的 UPH 預測數值計算邏輯 ---
   function updateSharedPredValue(res) {
     let todayPred = 0;
     let todayTdc = 0;
@@ -1479,7 +1516,6 @@
       }
     }
 
-    // 同步更新所有相關 UI 元素
     let elUphTdc = document.getElementById('totUphTdc');
     if (elUphTdc) elUphTdc.textContent = todayTdc;
     
@@ -1489,7 +1525,6 @@
     let elRecPred = document.getElementById('totRecPred');
     if (elRecPred) elRecPred.textContent = todayPred;
   }
-  // --- 結束共用邏輯 ---
 
   function loadRecDataList() {
     let timer = startLoadingMsg('recMsgArea', 'REC STAT');
@@ -1511,7 +1546,6 @@
       }
     }).getDbData();
 
-    // 背景獲取 UPH 數據以更新 REC 頁面上的 PRED 預測值
     window.google.script.run.withSuccessHandler((uphRes) => {
         updateSharedPredValue(uphRes);
     }).getUphData();
@@ -2033,7 +2067,6 @@
             let targetKey = `${currentRowGroup}-${col}-${lvl}`;
             let isRestockTarget = restockLocs.has(targetKey);
             
-            // COUNTUNIQUE PL
             let palletCount = 0;
             if (isRestockTarget) {
                 let uniquePls = new Set();
@@ -2178,84 +2211,6 @@
     document.getElementById('lpSummaryBox').style.display = "flex"; document.getElementById('lpTableContainer').innerHTML = h;
   }
 
-  // --- 共用的 UPH 預測數值計算邏輯 ---
-  function updateSharedPredValue(res) {
-    let todayPred = 0;
-    let todayTdc = 0;
-
-    if (res && res.data && res.data.length > 0 && res.headers) {
-      let lastRow = res.data[0]; 
-      
-      let tdcCol = res.headers.find(c => String(c).toUpperCase().includes("TDC") || String(c).toUpperCase().includes("TOTAL"));
-      if (tdcCol) todayTdc = parseInt(lastRow[tdcCol], 10) || 0;
-
-      let timeCols = res.headers.filter(c => {
-        let upperC = String(c).toUpperCase();
-        if (upperC.includes("DATE") || upperC.includes("日期") || upperC.includes("TDC") || upperC.includes("TOTAL") || upperC.includes("REMARK")) return false;
-        
-        let colNum = parseInt(c, 10);
-        if (!isNaN(colNum) && colNum >= 18) {
-           let val = parseInt(lastRow[c], 10);
-           if (isNaN(val) || val <= 0) return false; 
-        }
-        return true;
-      });
-
-      if (timeCols.length > 0) {
-        let totalMinutes = 0;
-        let elapsedMinutes = 0;
-        let cumulativeQty = 0;
-        
-        let lastActiveIndex = -1;
-        for (let i = timeCols.length - 1; i >= 0; i--) {
-          let val = parseInt(lastRow[timeCols[i]], 10);
-          if (!isNaN(val) && val > 0) {
-            lastActiveIndex = i;
-            break;
-          }
-        }
-
-        timeCols.forEach((col, idx) => {
-           let colStr = String(col).replace(/\s/g, '').toUpperCase();
-           let isFirst = (idx === 0);
-           let isLast = (idx === timeCols.length - 1);
-           
-           let isLunch = (/13.*14|13:00|1300|1-2|LUNCH|吃飯|^13$/i.test(colStr)) && !(/12.*13/i.test(colStr)); 
-
-           let slotMinutes = 60;
-           if (isLunch) slotMinutes = 0;
-           else if (isFirst) slotMinutes = 40;
-           else if (isLast) slotMinutes = 40;
-
-           totalMinutes += slotMinutes;
-
-           if (idx <= lastActiveIndex) {
-             elapsedMinutes += slotMinutes;
-             let qty = parseInt(lastRow[col], 10) || 0;
-             cumulativeQty += qty;
-           }
-        });
-
-        if (elapsedMinutes > 0 && cumulativeQty > 0) {
-           let upm = cumulativeQty / Math.max(1, elapsedMinutes);
-           todayPred = Math.round(upm * totalMinutes);
-        } else {
-           todayPred = todayTdc; 
-        }
-      }
-    }
-
-    let elUphTdc = document.getElementById('totUphTdc');
-    if (elUphTdc) elUphTdc.textContent = todayTdc;
-    
-    let elUphPred = document.getElementById('totUphPred');
-    if (elUphPred) elUphPred.textContent = todayPred;
-    
-    let elRecPred = document.getElementById('totRecPred');
-    if (elRecPred) elRecPred.textContent = todayPred;
-  }
-  // --- 結束共用邏輯 ---
-
   function loadUphData() {
     let timer = startLoadingMsg('uphMsgArea', 'UPH STAT');
     window.google.script.run.withSuccessHandler((res) => { stopLoadingMsg('uphMsgArea', timer); fetchAndUpdateSyncTime('HourlyKPI', 'lastUphRefreshedTime'); renderUphData(res || { headers: [], data: [], rowCount: 0 }); }).withFailureHandler(e => { stopLoadingMsg('uphMsgArea', timer); document.getElementById('uphMsgArea').textContent="ERROR:"+e.message; }).getUphData();
@@ -2346,7 +2301,6 @@
       const plQtyMap = new Map();
       const validPlsForSelectedReceipts = new Set();
       
-      // 第1階段：計算全域收貨單(RECEIPT)的數量
       globalGohData.forEach(item => {
           let qty = 0;
           Object.keys(item).forEach(k => { if(k.toUpperCase() === "QTY_ON_HAND" || k.toUpperCase() === "QTY") qty = parseFloat(item[k]) || 0; });
@@ -2359,7 +2313,6 @@
       const hasReceiptFilter = gohMultiFilters.receipt.size > 0;
       let filteredGohQty = 0;
 
-      // 第2階段：根據選擇的收貨單(RECEIPT)，過濾出對應的棧板(PL)
       globalGohData.forEach(item => {
           let receipt = getGohReceipt(item);
           let qty = 0;
@@ -2373,7 +2326,6 @@
           }
       });
       
-      // 清理已經失效的棧板條件（防呆：切換 RECEIPT 後，舊的 PL 不存在了）
       let plFiltersChanged = false;
       gohMultiFilters.pl.forEach(pl => {
           if (!validPlsForSelectedReceipts.has(pl)) {
@@ -2390,7 +2342,6 @@
       
       let html = '';
       
-      // 1. RECEIPT 橫排 (支援多列折行)
       html += `<div class="goh-filter-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
       html += `<span class="goh-filter-label" style="font-size: 10px; color: var(--accent-cyan); font-family: 'Roboto Mono', monospace; font-weight: bold; display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; padding: 2px 4px;">REC</span>`;
       html += `<button class="filter-btn-compact ${hasReceiptFilter ? '' : 'active'}" data-type="receipt" data-val="ALL" onclick="toggleGohFilter('receipt', 'ALL')">ALL <span style="color:var(--text-muted); font-size:9px;">(${totalGohQty})</span></button>`;
@@ -2402,7 +2353,6 @@
       });
       html += `</div>`;
 
-      // 2. PL 橫排 (聯動後過濾的結果)
       html += `<div class="goh-filter-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
       html += `<span class="goh-filter-label" style="font-size: 10px; color: #38bdf8; font-family: 'Roboto Mono', monospace; font-weight: bold; display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; padding: 2px 4px;">PL</span>`;
       html += `<button class="filter-btn-compact ${gohMultiFilters.pl.size === 0 ? 'active' : ''}" data-type="pl" data-val="ALL" onclick="toggleGohFilter('pl', 'ALL')">ALL <span style="color:var(--text-muted); font-size:9px;">(${filteredGohQty})</span></button>`;
@@ -2416,7 +2366,6 @@
 
       filterGroup.innerHTML = html;
       
-      // 如果防呆機制清除了舊的 PL 條件，強制重新渲染表格
       if (plFiltersChanged) renderGohTable();
   }
 
@@ -2431,11 +2380,9 @@
           }
       }
 
-      // 如果點擊的是 RECEIPT，必須觸發整體過濾器的重新渲染以計算聯動的 PL
       if (type === 'receipt') {
           renderGohFilters();
       } else {
-          // 如果只是點擊 PL，只需要單純修改按鈕的外觀與狀態
           document.querySelectorAll(`#gohFilterGroup .filter-btn-compact[data-type="${type}"]`).forEach(btn => {
               let btnVal = btn.getAttribute('data-val');
               if (btnVal === 'ALL') {
@@ -2538,26 +2485,6 @@
               btn.style.display = isStHideEmpty ? 'none' : 'flex';
           }
       });
-  }
-
-  function startStLocationScanner() {
-      const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
-      r.style.display = 'block'; btn.style.display = 'block';
-      if (!stHtml5QrCode) stHtml5QrCode = new Html5Qrcode("stReader"); 
-      
-      const successCb = (text) => { document.getElementById('stLocInput').value = text; stopStLocationScanner(); handleStLocInput(true); };
-      
-      stHtml5QrCode.start( { facingMode: "environment", advanced: [{ focusMode: "continuous" }] }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
-      ).catch(e => { 
-          stHtml5QrCode.start( { facingMode: "environment" }, { fps: 15, qrbox: { width: 220, height: 220 } }, successCb, () => {}
-          ).catch(err => { alert("CAMERA ERROR: " + err); stopStLocationScanner(); });
-      });
-  }
-  
-  function stopStLocationScanner() {
-      const r = document.getElementById('stReader'); const btn = document.getElementById('stopStScanLocBtn');
-      if (stHtml5QrCode && stHtml5QrCode.isScanning) stHtml5QrCode.stop().then(()=>{r.style.display='none';btn.style.display='none';});
-      else { r.style.display='none'; btn.style.display='none'; }
   }
 
   function handleStLocInput(isFromCamera = false) {
