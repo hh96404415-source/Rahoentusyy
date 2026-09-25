@@ -318,6 +318,24 @@
         display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1);
         border-radius: 4px; padding: 2px 4px;
     }
+    
+    /* AR 擴增實境專屬樣式 */
+    .ar-viewport { position: relative; width: 100%; height: calc(100vh - 150px); min-height: 400px; max-height: 600px; background: #000; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-light); }
+    .ar-video, .ar-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+    .ar-hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; justify-content: center; align-items: center; }
+    .ar-reticle { width: 220px; height: 220px; position: relative; transition: all 0.3s ease; }
+    .ar-reticle::before, .ar-reticle::after, .ar-reticle-inner::before, .ar-reticle-inner::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: var(--accent-cyan); border-style: solid; box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
+    .ar-reticle::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
+    .ar-reticle::after { top: 0; right: 0; border-width: 3px 3px 0 0; }
+    .ar-reticle-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .ar-reticle-inner::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+    .ar-reticle-inner::after { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+    .ar-scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--accent-cyan); box-shadow: 0 0 15px 5px rgba(56, 189, 248, 0.6); opacity: 0; z-index: 15; }
+    @keyframes arScanAnim { 0% { top: 10%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
+    .ar-tag { position: absolute; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-left: 4px solid var(--accent-cyan); border-radius: 4px; padding: 10px; color: #fff; font-family: 'Roboto Mono', monospace; z-index: 20; box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 0 15px rgba(56,189,248,0.15); opacity: 0; transform: scale(0.8) translateY(20px); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .ar-tag.active { opacity: 1; transform: scale(1) translateY(0); }
+    .ar-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 15; pointer-events: none; opacity: 0; transition: opacity 0.5s ease; }
+    .ar-control-panel { position: absolute; bottom: 0; left: 0; width: 100%; padding: 16px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%); z-index: 30; }
   </style>
 </head>
 <body>
@@ -682,6 +700,81 @@
     <div class="compact-table-wrapper"><div id="stTableContainer"></div></div>
   </div>
 
+  <!-- AR View -->
+  <div id="arView" class="view-section" style="display: none;">
+    <div id="arMsgArea" class="message"></div>
+    
+    <!-- AR 啟動準備畫面 (On-Demand 攔截) -->
+    <div id="arStartScreen" style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-light);">
+      <i class="ph ph-camera-rotate" style="font-size: 48px; color: var(--accent-cyan); margin-bottom: 16px; opacity: 0.8;"></i>
+      <div style="color: var(--text-main); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;">VISION PICKING V1</div>
+      <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 24px; line-height: 1.5;">
+        擴增實境模組需要調用高耗能的原生相機串流。<br>離開此分頁時系統將自動釋放資源。
+      </div>
+      <button class="primary-btn" style="width: 100%; padding: 16px; font-size: 16px !important; letter-spacing: 2px; border-radius: 8px;" onclick="startARCamera()">
+        <i class="ph ph-power"></i> 啟動 AR 鏡頭
+      </button>
+    </div>
+
+    <!-- AR 實際應用視窗 -->
+    <div id="arAppContainer" class="ar-viewport" style="display: none;">
+      <!-- 頂部狀態列 -->
+      <div style="position: absolute; top: 12px; left: 12px; font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: bold; text-shadow: 0 0 5px #000; z-index: 30; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
+        <div id="arStatusIndicator" style="color: var(--accent-cyan);"><i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> CAMERA LIVE</div>
+        <div id="arSysMsg" style="color: var(--status-yellow); margin-top: 2px; font-size: 9px;">Awaiting scan...</div>
+      </div>
+
+      <video id="arCameraView" class="ar-video" autoplay playsinline muted></video>
+      <canvas id="arSnapshotView" class="ar-canvas" style="display: none;"></canvas>
+
+      <!-- HUD 遮罩 -->
+      <div class="ar-hud" id="arHudOverlay">
+        <div class="ar-reticle" id="arReticleBox">
+          <div class="ar-reticle-inner"></div>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-cyan); opacity: 0.5;">
+              <i class="ph ph-crosshair" style="font-size: 32px;"></i>
+          </div>
+        </div>
+        <div class="ar-scan-line" id="arScanLine"></div>
+      </div>
+
+      <!-- 連接線 (SVG) -->
+      <svg class="ar-lines" id="arLines">
+        <line x1="50%" y1="50%" x2="20%" y2="25%" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 4" />
+        <line x1="50%" y1="50%" x2="65%" y2="70%" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4 4" />
+      </svg>
+
+      <!-- 虛擬標籤容器 -->
+      <div id="arTagsContainer">
+        <!-- Tag 1 -->
+        <div class="ar-tag" id="arTag1" style="top: 15%; left: 5%; border-color: var(--accent-cyan); min-width: 140px;">
+          <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 2px;">LOCATION</div>
+          <div style="font-size: 24px; font-weight: 900; line-height: 1;">STAGE001</div>
+          <div style="font-size: 11px; margin-top: 6px; display:flex; justify-content:space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
+              <span style="color:var(--text-muted);">PL_COUNT:</span> 
+              <span style="color:var(--accent-cyan); font-weight:bold;">9</span>
+          </div>
+        </div>
+
+        <!-- Tag 2 -->
+        <div class="ar-tag" id="arTag2" style="top: 65%; left: 35%; border-color: var(--status-yellow); min-width: 180px;">
+          <div style="font-size: 10px; color: var(--status-yellow); margin-bottom: 2px;">TARGET PALLET</div>
+          <div style="font-size: 18px; font-weight: 900; line-height: 1.2;">8034150718050</div>
+          <div style="background: rgba(251, 191, 36, 0.2); color: var(--status-yellow); padding: 4px; margin-top: 6px; font-size: 11px; font-weight: bold; text-align: center; border-radius: 4px; border: 1px solid rgba(251, 191, 36, 0.4);">
+              <i class="ph ph-warning"></i> REQUIRED REPLENISH
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部控制鈕 -->
+      <div class="ar-control-panel">
+        <button id="arActionBtn" class="primary-btn" style="width: 100%; padding: 14px; font-size: 16px !important; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); backdrop-filter: blur(4px);" onclick="handleARAction()">
+          <i class="ph ph-scan"></i> SCAN (模擬分析)
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -775,13 +868,13 @@
     verifyPinCode(pin) {
       this._handleResult(fetchCache().then(data => {
         let authList = []; let authHeaders = [];
-        if (Array.isArray(data.auth)) { authList = data.auth.filter(u => u !== null); authHeaders = ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; } 
-        else if (data.auth && data.auth.users) { authList = (data.auth.users || []).filter(u => u !== null); authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB"]; }
+        if (Array.isArray(data.auth)) { authList = data.auth.filter(u => u !== null); authHeaders = ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB", "AR"]; } 
+        else if (data.auth && data.auth.users) { authList = (data.auth.users || []).filter(u => u !== null); authHeaders = data.auth.headers || ["REC", "DI", "LP", "GOH", "ST", "UPH", "補貨", "MAP", "訂單", "查詢", "盤點", "DB", "AR"]; }
 
         const inputPin = String(pin).trim(); const user = authList.find(u => u.pin === inputPin);
         if (!user) return { success: false, error: 'Invalid PIN Code.' };
         
-        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph", "GOH": "goh", "ST": "st" };
+        const tabMapping = { "查詢": "search", "補貨": "list", "盤點": "audit", "訂單": "orderStatus", "DI": "gao", "REC": "rec", "DB": "db", "MAP": "map", "Loadplan": "lp", "LP": "lp", "UPH": "uph", "GOH": "goh", "ST": "st", "AR": "ar" };
         let permissions = [];
         
         authHeaders.forEach(key => {
@@ -963,7 +1056,7 @@
   }
 
   function activateGodMode() {
-    const orderedPerms = ['rec', 'gao', 'lp', 'goh', 'st', 'uph', 'list', 'map', 'orderStatus', 'search', 'audit', 'db'];
+    const orderedPerms = ['rec', 'gao', 'lp', 'goh', 'st', 'uph', 'list', 'map', 'orderStatus', 'search', 'audit', 'db', 'ar'];
     applyPermissions({ success: true, name: "Dev Admin", permissions: orderedPerms });
   }
 
@@ -995,7 +1088,7 @@
     "search": { label: "查詢", icon: "ph-magnifying-glass" }, "list": { label: "補貨", icon: "ph-recycle" }, "audit": { label: "盤點", icon: "ph-clipboard-text" },
     "orderStatus": { label: "訂單", icon: "ph-package" }, "gao": { label: "DI", icon: "ph-truck" }, "rec": { label: "REC", icon: "ph-target" },
     "db": { label: "DB", icon: "ph-database" }, "map": { label: "MAP", icon: "ph-map-trifold" }, "lp": { label: "LP", icon: "ph-list-numbers" }, "uph": { label: "UPH", icon: "ph-trend-up" },
-    "goh": { label: "GOH", icon: "ph-t-shirt" }, "st": { label: "ST", icon: "ph-archive-box" }
+    "goh": { label: "GOH", icon: "ph-t-shirt" }, "st": { label: "ST", icon: "ph-archive-box" }, "ar": { label: "AR", icon: "ph-camera-rotate" }
   };
 
   function applyPermissions(authData) {
@@ -1193,6 +1286,9 @@
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); fetchData(); } });
 
   function switchTab(tab) {
+    if (currentTab === 'ar' && tab !== 'ar') {
+        stopARCamera(); // 離開 AR 分頁時強制釋放鏡頭資源
+    }
     currentTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     const targetBtn = document.querySelector(`.tab-btn[data-target="${tab}"]`);
@@ -2683,6 +2779,125 @@
       document.getElementById('stSummaryBox').style.display = "flex";
       document.getElementById('stTableContainer').innerHTML = h;
   }
+  
+  // ==========================================
+  // AR (Vision Picking) 核心邏輯
+  // ==========================================
+  let arStream = null;
+  let arIsScanning = false;
+  let arIsFrozen = false;
+
+  async function startARCamera() {
+      const video = document.getElementById('arCameraView');
+      try {
+          arStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' }
+          });
+          video.srcObject = arStream;
+          document.getElementById('arStartScreen').style.display = 'none';
+          document.getElementById('arAppContainer').style.display = 'block';
+      } catch (err) {
+          document.getElementById('arMsgArea').textContent = "鏡頭啟動失敗：" + err.message;
+          document.getElementById('arMsgArea').style.color = "var(--status-red)";
+      }
+  }
+
+  function stopARCamera() {
+      if (arStream) {
+          arStream.getTracks().forEach(track => track.stop());
+          arStream = null;
+      }
+      arIsScanning = false;
+      arIsFrozen = false;
+      document.getElementById('arStartScreen').style.display = 'block';
+      document.getElementById('arAppContainer').style.display = 'none';
+      resetARState();
+  }
+
+  function handleARAction() {
+      if (arIsScanning) return;
+      if (arIsFrozen) resetARState();
+      else startARScanAnimation();
+  }
+
+  function startARScanAnimation() {
+      arIsScanning = true;
+      const btn = document.getElementById('arActionBtn');
+      const sysMsg = document.getElementById('arSysMsg');
+      const scanLine = document.getElementById('arScanLine');
+      const reticle = document.getElementById('arReticleBox');
+
+      btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> PROCESSING...';
+      btn.style.borderColor = 'var(--status-yellow)';
+      btn.style.color = 'var(--status-yellow)';
+      sysMsg.textContent = "Analyzing spatial data...";
+      sysMsg.style.color = "var(--status-yellow)";
+      
+      reticle.style.transform = 'scale(1.2)';
+      reticle.style.opacity = '0.3';
+      scanLine.style.animation = 'arScanAnim 1.2s ease-in-out';
+
+      setTimeout(() => { freezeFrameAndShowAR(); }, 1200);
+  }
+
+  function freezeFrameAndShowAR() {
+      const video = document.getElementById('arCameraView');
+      const canvas = document.getElementById('arSnapshotView');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+
+      document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-pause" style="color:var(--status-yellow);"></i> FRAME FROZEN';
+      document.getElementById('arStatusIndicator').style.color = 'var(--status-yellow)';
+      document.getElementById('arSysMsg').textContent = "Data overlay active.";
+      document.getElementById('arSysMsg').style.color = "var(--accent-cyan)";
+
+      document.getElementById('arScanLine').style.animation = 'none';
+      document.getElementById('arReticleBox').style.opacity = '0';
+
+      document.getElementById('arLines').style.opacity = '1';
+      document.getElementById('arTag1').classList.add('active');
+      setTimeout(() => { document.getElementById('arTag2').classList.add('active'); }, 200);
+
+      arIsFrozen = true;
+      arIsScanning = false;
+      const btn = document.getElementById('arActionBtn');
+      btn.innerHTML = '<i class="ph ph-arrow-counter-clockwise"></i> RESET / CLEAR';
+      btn.style.borderColor = 'var(--accent-cyan)';
+      btn.style.color = 'var(--accent-cyan)';
+  }
+
+  function resetARState() {
+      document.getElementById('arTag1').classList.remove('active');
+      document.getElementById('arTag2').classList.remove('active');
+      document.getElementById('arLines').style.opacity = '0';
+
+      const video = document.getElementById('arCameraView');
+      const canvas = document.getElementById('arSnapshotView');
+      canvas.style.display = 'none';
+      video.style.display = 'block';
+
+      const reticle = document.getElementById('arReticleBox');
+      reticle.style.opacity = '1';
+      reticle.style.transform = 'scale(1)';
+
+      document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> CAMERA LIVE';
+      document.getElementById('arStatusIndicator').style.color = 'var(--accent-cyan)';
+      document.getElementById('arSysMsg').textContent = "Awaiting scan...";
+      document.getElementById('arSysMsg').style.color = "var(--status-yellow)";
+
+      arIsFrozen = false;
+      const btn = document.getElementById('arActionBtn');
+      btn.innerHTML = '<i class="ph ph-scan"></i> SCAN (模擬分析)';
+      btn.style.borderColor = 'var(--accent-cyan)';
+      btn.style.color = 'var(--accent-cyan)';
+  }
+
 </script>
 </body>
 </html>
