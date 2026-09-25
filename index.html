@@ -752,22 +752,21 @@
 
       <!-- 虛擬標籤容器 -->
       <div id="arTagsContainer">
-        <!-- Tag 1 -->
-        <div class="ar-tag" id="arTag1" style="top: 15%; left: 5%; border-color: var(--accent-cyan); min-width: 140px;">
-          <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 2px;">DETECTED BARCODE</div>
-          <div id="arTag1_Title" style="font-size: 20px; font-weight: 900; line-height: 1;">--</div>
-          <div style="font-size: 11px; margin-top: 6px; display:flex; justify-content:space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
-              <span style="color:var(--text-muted);">STATUS:</span> 
-              <span style="color:var(--status-green); font-weight:bold;">VERIFIED</span>
-          </div>
-        </div>
-
-        <!-- Tag 2 -->
-        <div class="ar-tag" id="arTag2" style="top: 65%; left: 35%; border-color: var(--status-yellow); min-width: 180px;">
-          <div style="font-size: 10px; color: var(--status-yellow); margin-bottom: 2px;">ACTION REQUIRED</div>
-          <div style="font-size: 14px; font-weight: 900; line-height: 1.2; color: #fff;">TAP ANYWHERE TO RESUME</div>
-          <div style="background: rgba(251, 191, 36, 0.2); color: var(--status-yellow); padding: 4px; margin-top: 6px; font-size: 11px; font-weight: bold; text-align: center; border-radius: 4px; border: 1px solid rgba(251, 191, 36, 0.4);">
-              <i class="ph ph-info"></i> AUTO-SCAN PAUSED
+        <!-- 專為長者設計的超大字體資訊卡 -->
+        <div class="ar-tag" id="arTag1" style="top: 15%; left: 5%; right: 5%; border-color: var(--accent-cyan); text-align: center; border-radius: 12px; border-left: 6px solid var(--accent-cyan); background: rgba(15, 23, 42, 0.95); box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(56,189,248,0.2);">
+          <div style="font-size: 16px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: 2px; font-weight: bold;">LOCATION (真實儲位)</div>
+          <div id="arTag1_Loc" style="font-size: 48px; font-weight: 900; line-height: 1.1; color: var(--accent-cyan); text-shadow: 0 0 15px rgba(56,189,248,0.5); word-break: break-all; margin-bottom: 24px;">--</div>
+          
+          <div style="display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.5); padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+                <div style="font-size: 16px; color: var(--text-muted); font-weight: bold; margin-bottom: 8px;">棧板總數 (PL)</div>
+                <div id="arTag1_Pl" style="font-size: 72px; font-weight: 900; line-height: 1; color: var(--status-yellow); text-shadow: 0 0 20px rgba(251,191,36,0.6);">0</div>
+            </div>
+            <div style="width: 2px; height: 80px; background: rgba(255,255,255,0.1);"></div>
+            <div style="display: flex; flex-direction: column; align-items: center; width: 45%;">
+                <div style="font-size: 16px; color: var(--text-muted); font-weight: bold; margin-bottom: 8px;">總庫存量 (QTY)</div>
+                <div id="arTag1_Qty" style="font-size: 56px; font-weight: 900; line-height: 1; color: var(--status-green); text-shadow: 0 0 15px rgba(52,211,153,0.5);">0</div>
+            </div>
           </div>
         </div>
       </div>
@@ -2843,23 +2842,46 @@
       document.getElementById('arReader').style.display = 'none';
       canvas.style.display = 'block';
 
-      // 4. 更新狀態與資訊卡片
+      // 4. 更新狀態列
       document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-pause" style="color:var(--status-yellow);"></i> FRAME FROZEN';
       document.getElementById('arStatusIndicator').style.color = 'var(--status-yellow)';
-      document.getElementById('arSysMsg').innerHTML = `Caught: <span style="color:#fff;">${decodedText}</span>`;
+      document.getElementById('arSysMsg').innerHTML = `Querying: <span style="color:#fff;">${decodedText}</span>`;
       document.getElementById('arSysMsg').style.color = "var(--accent-cyan)";
 
       // 停止掃描線
       document.getElementById('arScanLine').style.animation = 'none';
       document.getElementById('arReticleBox').style.opacity = '0';
 
-      // 顯示虛擬連線與標籤，緊貼條碼位置
-      document.getElementById('arLines').style.opacity = '1';
-      document.getElementById('arTag1_Title').textContent = decodedText;
-      document.getElementById('arTag1').classList.add('active');
-      setTimeout(() => { document.getElementById('arTag2').classList.add('active'); }, 200);
+      // 5. 設定 AR 標籤為載入中狀態並顯示
+      let targetLoc = decodedText.trim().toUpperCase();
+      // 防呆：如果是純數字，自動轉換為 STAGE 格式 (支援 1 -> STAGE001)
+      if (/^\d+$/.test(targetLoc)) targetLoc = "STAGE" + targetLoc.padStart(3, '0');
+      else if (targetLoc.startsWith('ST') && !targetLoc.startsWith('STAGE')) targetLoc = targetLoc.replace('ST', 'STAGE');
 
-      // 底部按鈕更新
+      document.getElementById('arTag1_Loc').textContent = targetLoc;
+      document.getElementById('arTag1_Pl').innerHTML = '<i class="ph ph-spinner ph-spin" style="font-size: 56px;"></i>';
+      document.getElementById('arTag1_Qty').innerHTML = '--';
+      
+      document.getElementById('arTag1').classList.add('active');
+      document.getElementById('arLines').style.opacity = '1';
+
+      // 6. 背景非同步查詢庫存資料
+      window.google.script.run.withSuccessHandler(function(res) {
+          if (res && res.data && res.data.length > 0) {
+              document.getElementById('arTag1_Pl').textContent = res.uniquePallets || 0;
+              document.getElementById('arTag1_Qty').textContent = res.totalQty || 0;
+              document.getElementById('arSysMsg').innerHTML = `Data mapped for <span style="color:#fff;">${targetLoc}</span>`;
+          } else {
+              document.getElementById('arTag1_Pl').textContent = "0";
+              document.getElementById('arTag1_Qty').textContent = "0";
+              document.getElementById('arSysMsg').innerHTML = `<span style="color:var(--status-red);">No inventory found.</span>`;
+          }
+      }).withFailureHandler(function(err) {
+          document.getElementById('arTag1_Pl').textContent = "ERR";
+          document.getElementById('arTag1_Qty').textContent = "ERR";
+      }).searchLocation(targetLoc);
+
+      // 7. 底部按鈕更新為重置功能
       const btn = document.getElementById('arActionBtn');
       btn.innerHTML = '<i class="ph ph-hand-tap"></i> 點擊畫面任意處 重新掃描';
       btn.style.borderColor = 'var(--status-yellow)';
