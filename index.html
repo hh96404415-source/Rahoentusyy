@@ -322,6 +322,11 @@
     /* AR 擴增實境專屬樣式 */
     .ar-viewport { position: relative; width: 100%; height: calc(100vh - 150px); min-height: 400px; max-height: 600px; background: #000; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-light); }
     .ar-video, .ar-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+    
+    /* 覆寫 html5-qrcode 預設樣式以滿版呈現 */
+    #arReader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; border: none !important; }
+    #arReader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
     .ar-hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; justify-content: center; align-items: center; }
     .ar-reticle { width: 220px; height: 220px; position: relative; transition: all 0.3s ease; }
     .ar-reticle::before, .ar-reticle::after, .ar-reticle-inner::before, .ar-reticle-inner::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: var(--accent-cyan); border-style: solid; box-shadow: 0 0 10px rgba(56, 189, 248, 0.6); }
@@ -717,14 +722,15 @@
     </div>
 
     <!-- AR 實際應用視窗 -->
-    <div id="arAppContainer" class="ar-viewport" style="display: none;">
+    <div id="arAppContainer" class="ar-viewport" style="display: none;" onclick="if(arIsFrozen) resetARState();">
       <!-- 頂部狀態列 -->
       <div style="position: absolute; top: 12px; left: 12px; font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: bold; text-shadow: 0 0 5px #000; z-index: 30; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
-        <div id="arStatusIndicator" style="color: var(--accent-cyan);"><i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> CAMERA LIVE</div>
-        <div id="arSysMsg" style="color: var(--status-yellow); margin-top: 2px; font-size: 9px;">Awaiting scan...</div>
+        <div id="arStatusIndicator" style="color: var(--accent-cyan);"><i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> AUTO SCAN LIVE</div>
+        <div id="arSysMsg" style="color: var(--status-yellow); margin-top: 2px; font-size: 9px;">Scanning for barcodes...</div>
       </div>
 
-      <video id="arCameraView" class="ar-video" autoplay playsinline muted></video>
+      <!-- AR 引擎容器 -->
+      <div id="arReader"></div>
       <canvas id="arSnapshotView" class="ar-canvas" style="display: none;"></canvas>
 
       <!-- HUD 遮罩 -->
@@ -735,7 +741,7 @@
               <i class="ph ph-crosshair" style="font-size: 32px;"></i>
           </div>
         </div>
-        <div class="ar-scan-line" id="arScanLine"></div>
+        <div class="ar-scan-line" id="arScanLine" style="animation: arScanAnim 1.5s ease-in-out infinite;"></div>
       </div>
 
       <!-- 連接線 (SVG) -->
@@ -748,28 +754,28 @@
       <div id="arTagsContainer">
         <!-- Tag 1 -->
         <div class="ar-tag" id="arTag1" style="top: 15%; left: 5%; border-color: var(--accent-cyan); min-width: 140px;">
-          <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 2px;">LOCATION</div>
-          <div style="font-size: 24px; font-weight: 900; line-height: 1;">STAGE001</div>
+          <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 2px;">DETECTED BARCODE</div>
+          <div id="arTag1_Title" style="font-size: 20px; font-weight: 900; line-height: 1;">--</div>
           <div style="font-size: 11px; margin-top: 6px; display:flex; justify-content:space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 4px;">
-              <span style="color:var(--text-muted);">PL_COUNT:</span> 
-              <span style="color:var(--accent-cyan); font-weight:bold;">9</span>
+              <span style="color:var(--text-muted);">STATUS:</span> 
+              <span style="color:var(--status-green); font-weight:bold;">VERIFIED</span>
           </div>
         </div>
 
         <!-- Tag 2 -->
         <div class="ar-tag" id="arTag2" style="top: 65%; left: 35%; border-color: var(--status-yellow); min-width: 180px;">
-          <div style="font-size: 10px; color: var(--status-yellow); margin-bottom: 2px;">TARGET PALLET</div>
-          <div style="font-size: 18px; font-weight: 900; line-height: 1.2;">8034150718050</div>
+          <div style="font-size: 10px; color: var(--status-yellow); margin-bottom: 2px;">ACTION REQUIRED</div>
+          <div style="font-size: 14px; font-weight: 900; line-height: 1.2; color: #fff;">TAP ANYWHERE TO RESUME</div>
           <div style="background: rgba(251, 191, 36, 0.2); color: var(--status-yellow); padding: 4px; margin-top: 6px; font-size: 11px; font-weight: bold; text-align: center; border-radius: 4px; border: 1px solid rgba(251, 191, 36, 0.4);">
-              <i class="ph ph-warning"></i> REQUIRED REPLENISH
+              <i class="ph ph-info"></i> AUTO-SCAN PAUSED
           </div>
         </div>
       </div>
 
       <!-- 底部控制鈕 -->
       <div class="ar-control-panel">
-        <button id="arActionBtn" class="primary-btn" style="width: 100%; padding: 14px; font-size: 16px !important; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); backdrop-filter: blur(4px);" onclick="handleARAction()">
-          <i class="ph ph-scan"></i> SCAN (模擬分析)
+        <button id="arActionBtn" class="primary-btn" style="width: 100%; padding: 14px; font-size: 16px !important; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--status-red); color: var(--status-red); backdrop-filter: blur(4px);" onclick="stopARCamera()">
+          <i class="ph ph-stop-circle"></i> 關閉 AR (CLOSE)
         </button>
       </div>
     </div>
@@ -2783,119 +2789,130 @@
   // ==========================================
   // AR (Vision Picking) 核心邏輯
   // ==========================================
-  let arStream = null;
-  let arIsScanning = false;
+  let arHtml5QrCode = null;
   let arIsFrozen = false;
 
-  async function startARCamera() {
-      const video = document.getElementById('arCameraView');
-      try {
-          arStream = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: 'environment' }
-          });
-          video.srcObject = arStream;
-          document.getElementById('arStartScreen').style.display = 'none';
-          document.getElementById('arAppContainer').style.display = 'block';
-      } catch (err) {
-          document.getElementById('arMsgArea').textContent = "鏡頭啟動失敗：" + err.message;
+  function startARCamera() {
+      document.getElementById('arStartScreen').style.display = 'none';
+      document.getElementById('arAppContainer').style.display = 'block';
+      document.getElementById('arSnapshotView').style.display = 'none';
+      document.getElementById('arReader').style.display = 'block';
+
+      if (!arHtml5QrCode) {
+          arHtml5QrCode = new Html5Qrcode("arReader");
+      }
+
+      // 使用安全動態遮罩，保證 100% 相容所有手機且運算提速
+      arHtml5QrCode.start(
+          { facingMode: "environment" },
+          { 
+              fps: 15,
+              qrbox: (vw, vh) => { return Math.floor(Math.min(vw, vh) * 0.7); }
+          },
+          (decodedText) => {
+              if (!arIsFrozen) {
+                  handleARScanSuccess(decodedText);
+              }
+          },
+          (err) => { /* 忽略掃描中的未找到條碼錯誤 */ }
+      ).then(() => {
+          arIsFrozen = false;
+          resetARHUD();
+      }).catch(err => {
+          document.getElementById('arMsgArea').textContent = "鏡頭啟動失敗：" + err;
           document.getElementById('arMsgArea').style.color = "var(--status-red)";
-      }
+      });
   }
 
-  function stopARCamera() {
-      if (arStream) {
-          arStream.getTracks().forEach(track => track.stop());
-          arStream = null;
-      }
-      arIsScanning = false;
-      arIsFrozen = false;
-      document.getElementById('arStartScreen').style.display = 'block';
-      document.getElementById('arAppContainer').style.display = 'none';
-      resetARState();
-  }
+  function handleARScanSuccess(decodedText) {
+      arIsFrozen = true;
+      playScanSound('match');
+      triggerVibration(60);
 
-  function handleARAction() {
-      if (arIsScanning) return;
-      if (arIsFrozen) resetARState();
-      else startARScanAnimation();
-  }
-
-  function startARScanAnimation() {
-      arIsScanning = true;
-      const btn = document.getElementById('arActionBtn');
-      const sysMsg = document.getElementById('arSysMsg');
-      const scanLine = document.getElementById('arScanLine');
-      const reticle = document.getElementById('arReticleBox');
-
-      btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> PROCESSING...';
-      btn.style.borderColor = 'var(--status-yellow)';
-      btn.style.color = 'var(--status-yellow)';
-      sysMsg.textContent = "Analyzing spatial data...";
-      sysMsg.style.color = "var(--status-yellow)";
-      
-      reticle.style.transform = 'scale(1.2)';
-      reticle.style.opacity = '0.3';
-      scanLine.style.animation = 'arScanAnim 1.2s ease-in-out';
-
-      setTimeout(() => { freezeFrameAndShowAR(); }, 1200);
-  }
-
-  function freezeFrameAndShowAR() {
-      const video = document.getElementById('arCameraView');
+      // 1. 抓取當下幀 (Freeze Frame)
+      const videoElement = document.querySelector('#arReader video');
       const canvas = document.getElementById('arSnapshotView');
-      const ctx = canvas.getContext('2d');
+      if (videoElement) {
+          canvas.width = videoElement.videoWidth || 640;
+          canvas.height = videoElement.videoHeight || 480;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      }
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // 2. 暫停掃描引擎以省電
+      try { if (arHtml5QrCode) arHtml5QrCode.pause(true); } catch(e) {}
 
-      video.style.display = 'none';
+      // 3. 切換 UI：隱藏相機，顯示靜止快照
+      document.getElementById('arReader').style.display = 'none';
       canvas.style.display = 'block';
 
+      // 4. 更新狀態與資訊卡片
       document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-pause" style="color:var(--status-yellow);"></i> FRAME FROZEN';
       document.getElementById('arStatusIndicator').style.color = 'var(--status-yellow)';
-      document.getElementById('arSysMsg').textContent = "Data overlay active.";
+      document.getElementById('arSysMsg').innerHTML = `Caught: <span style="color:#fff;">${decodedText}</span>`;
       document.getElementById('arSysMsg').style.color = "var(--accent-cyan)";
 
+      // 停止掃描線
       document.getElementById('arScanLine').style.animation = 'none';
       document.getElementById('arReticleBox').style.opacity = '0';
 
+      // 顯示虛擬連線與標籤，緊貼條碼位置
       document.getElementById('arLines').style.opacity = '1';
+      document.getElementById('arTag1_Title').textContent = decodedText;
       document.getElementById('arTag1').classList.add('active');
       setTimeout(() => { document.getElementById('arTag2').classList.add('active'); }, 200);
 
-      arIsFrozen = true;
-      arIsScanning = false;
+      // 底部按鈕更新
       const btn = document.getElementById('arActionBtn');
-      btn.innerHTML = '<i class="ph ph-arrow-counter-clockwise"></i> RESET / CLEAR';
-      btn.style.borderColor = 'var(--accent-cyan)';
-      btn.style.color = 'var(--accent-cyan)';
+      btn.innerHTML = '<i class="ph ph-hand-tap"></i> 點擊畫面任意處 重新掃描';
+      btn.style.borderColor = 'var(--status-yellow)';
+      btn.style.color = 'var(--status-yellow)';
+      btn.onclick = resetARState;
   }
 
   function resetARState() {
+      if (!arIsFrozen) return;
+      arIsFrozen = false;
+      
+      // 隱藏虛擬標籤與連線
       document.getElementById('arTag1').classList.remove('active');
       document.getElementById('arTag2').classList.remove('active');
       document.getElementById('arLines').style.opacity = '0';
 
-      const video = document.getElementById('arCameraView');
-      const canvas = document.getElementById('arSnapshotView');
-      canvas.style.display = 'none';
-      video.style.display = 'block';
+      // 恢復鏡頭顯示
+      document.getElementById('arSnapshotView').style.display = 'none';
+      document.getElementById('arReader').style.display = 'block';
 
+      // 重置 HUD 與掃描引擎
+      resetARHUD();
+      try { if (arHtml5QrCode) arHtml5QrCode.resume(); } catch(e) {}
+  }
+
+  function resetARHUD() {
       const reticle = document.getElementById('arReticleBox');
       reticle.style.opacity = '1';
       reticle.style.transform = 'scale(1)';
+      document.getElementById('arScanLine').style.animation = 'arScanAnim 1.5s ease-in-out infinite';
 
-      document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> CAMERA LIVE';
+      document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> AUTO SCAN LIVE';
       document.getElementById('arStatusIndicator').style.color = 'var(--accent-cyan)';
-      document.getElementById('arSysMsg').textContent = "Awaiting scan...";
+      document.getElementById('arSysMsg').textContent = "Scanning for barcodes...";
       document.getElementById('arSysMsg').style.color = "var(--status-yellow)";
 
-      arIsFrozen = false;
       const btn = document.getElementById('arActionBtn');
-      btn.innerHTML = '<i class="ph ph-scan"></i> SCAN (模擬分析)';
-      btn.style.borderColor = 'var(--accent-cyan)';
-      btn.style.color = 'var(--accent-cyan)';
+      btn.innerHTML = '<i class="ph ph-stop-circle"></i> 關閉 AR (CLOSE)';
+      btn.style.borderColor = 'var(--status-red)';
+      btn.style.color = 'var(--status-red)';
+      btn.onclick = stopARCamera;
+  }
+
+  function stopARCamera() {
+      if (arHtml5QrCode) {
+          try { arHtml5QrCode.stop(); } catch(e) {}
+      }
+      arIsFrozen = false;
+      document.getElementById('arStartScreen').style.display = 'block';
+      document.getElementById('arAppContainer').style.display = 'none';
   }
 
 </script>
