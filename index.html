@@ -1293,7 +1293,7 @@
 
   function switchTab(tab) {
     if (currentTab === 'ar' && tab !== 'ar') {
-        stopARCamera(); // 離開 AR 分頁時強制釋放鏡頭資源
+        stopARCamera(); 
     }
     currentTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -2802,13 +2802,10 @@
           arHtml5QrCode = new Html5Qrcode("arReader");
       }
 
-      // 使用安全動態遮罩，保證 100% 相容所有手機且運算提速
+      // 移除 qrbox 限制，解放全螢幕掃描視野
       arHtml5QrCode.start(
           { facingMode: "environment" },
-          { 
-              fps: 15,
-              qrbox: (vw, vh) => { return Math.floor(Math.min(vw, vh) * 0.7); }
-          },
+          { fps: 15 },
           (decodedText) => {
               if (!arIsFrozen) {
                   handleARScanSuccess(decodedText);
