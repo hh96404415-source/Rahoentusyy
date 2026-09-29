@@ -2381,7 +2381,7 @@
       
       globalGohData = data.filter(item => {
         const loc = String(item.LOCATION_ID || "").toUpperCase();
-        return /[TR]\d+/.test(loc) && loc !== "TRANST001";
+        return (/[TR]\d+/.test(loc) || loc.startsWith("RECEIVE")) && loc !== "TRANST001";
       });
 
       gohMultiFilters.receipt.clear();
