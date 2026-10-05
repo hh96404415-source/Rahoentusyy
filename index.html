@@ -449,8 +449,21 @@
   </div>
 </div>
 
-<div class="container" id="mainContainer" style="display: none;">
-  
+<!-- 新增：GOH 大字體掃描彈窗 -->
+<div id="gohLargePopupOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeGohLargePopup(event)">
+  <div class="glass-box" style="border-color: #d946ef; max-width: 90%; width: 400px; padding: 30px 20px;" onclick="event.stopPropagation();">
+    <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 2px;">SCANNED / 掃描結果</div>
+    <div id="gohLargeLoc" style="color: #fff; font-size: 56px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 1.1; margin-bottom: 24px; word-break: break-all;">T001</div>
+    <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 4px; letter-spacing: 2px;">MATCHED ITEMS</div>
+    <div id="gohLargePlCount" style="color: #d946ef; font-size: 120px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 0 25px rgba(217,70,239,0.5); line-height: 1; margin-bottom: 30px;">0</div>
+    <div style="display: flex; gap: 10px; width: 100%;">
+      <button style="flex: 1; padding: 16px 8px; font-size: 16px !important; border-radius: 12px; background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="scanNextGohLoc()"><i class="ph ph-camera"></i> 繼續掃描</button>
+      <button class="primary-btn" style="flex: 1; padding: 16px 8px; font-size: 18px !important; border-radius: 12px; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4); display: flex; align-items: center; justify-content: center;" onclick="closeGohLargePopup()">確 認 (OK)</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainContainer" class="container" style="display: none;">
   <div class="sys-header">
     <div class="sys-title" onclick="showSystemQrCode()"><i class="ph-fill ph-hexagon"></i> Rahoentusy</div>
     <div class="sys-user" id="currentUserDisplay">Logged as: -</div>
@@ -670,8 +683,20 @@
 
   <!-- GOH View -->
   <div id="gohView" class="view-section" style="display: none;">
+    <!-- 新增：GOH 掃描器鏡頭區 -->
+    <div id="gohReader" class="camera-wrapper" style="display:none; margin-bottom: 4px;"></div>
+    <button id="stopGohScanLocBtn" style="display:none; width: 100%; margin-bottom: 8px; background: var(--bg-hover);" onclick="stopGohLocationScanner()">CLOSE CAMERA</button>
+
     <div id="gohMsgArea" class="message"></div>
     <div class="summary-box-compact" id="gohSummaryBox" style="display: none;">
+      <!-- 新增：GOH 搜尋與掃描控制列 -->
+      <div style="display:flex; gap:2px; align-items:center; padding-right:6px; margin-right:4px; border-right:1px solid rgba(255,255,255,0.1);">
+        <input type="text" id="gohLocInput" placeholder="T..." onkeydown="if(event.key === 'Enter') handleGohLocInput()" onfocus="this.style.borderColor='var(--accent-cyan)'" onblur="this.style.borderColor='var(--border-light)'" style="width: 55px; min-width: 55px; padding: 2px 4px; font-size: 13px !important; height: 24px; border-radius: 4px; margin: 0; background: var(--bg-deep); color: var(--text-main); border: 1px solid var(--border-light); font-family: 'Roboto Mono', monospace; outline: none; transition: all 0.2s;">
+        <button id="gohScanLocBtn" class="icon-btn btn-camera" onclick="startGohLocationScanner()" style="min-width: 48px; max-width: 48px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; display:flex; align-items:center; justify-content:center;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
+        <button class="primary-btn icon-btn" onclick="handleGohLocInput()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-magnifying-glass" style="font-size:14px;"></i></button>
+        <button class="icon-btn" onclick="clearGohSearch()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; margin-left: 2px; color: var(--status-red); display: none;" id="clearGohSearchBtn"><i class="ph ph-x" style="font-size:14px;"></i></button>
+      </div>
+      
       <div class="summary-item-compact">ROWS:<span id="totGohRows">0</span></div>
       <div class="summary-item-compact">QTY:<span id="totGohQty" style="color:var(--status-green);">0</span></div>
       <div style="margin-left: auto; display:flex; align-items:center; gap:4px;">
@@ -1125,6 +1150,8 @@
   let lastDetected = null;
   let stHtml5QrCode = null;
   let isStHideEmpty = true;
+  let gohHtml5QrCode = null; // 新增 GOH 掃描器物件
+  let activeGohSearchKeyword = ""; // 新增 GOH 搜尋關鍵字狀態
 
   function startLocationScanner() {
     const r = document.getElementById('reader'); const btn = document.getElementById('stopScanLocBtn');
@@ -1218,12 +1245,84 @@
     else { r.style.display='none'; btn.style.display='none'; }
   }
 
-  const COUNTRY_FLAG_CODES = { "RUS": "ru", "USA": "us", "JPN": "jp", "CAN": "ca", "MEX": "mx", "AUS": "au", "KOR": "kr", "MAC": "mo", "TWN": "tw", "CHN": "cn", "HKG": "hk", "IDN": "id", "BRA": "br", "THA": "th", "KWT": "kw", "ARE": "ae", "SAU": "sa", "BHR": "bh", "SGP": "sg", "MYS": "my", "QAT": "qa", "KHM": "kh", "UZB": "uz", "PAK": "pk", "VNM": "vn", "PHL": "ph", "ISR": "il", "SUR": "sr", "GTM": "gt", "ARM": "am", "IND": "in", "KAZ": "kz", "MMR": "mm", "UKR": "ua", "ITA": "it", "ZAF": "za", "PRY": "py", "EGY": "eg", "LBN": "lb", "CHL": "cl", "VEN": "ve", "MUS": "mu", "URY": "uy", "COL": "co" };
-  function getFlagHtml(text) {
-    if (!text || typeof text !== 'string') return ""; const str = text.trim(); if (!str) return "";
-    const code = COUNTRY_FLAG_CODES[str.toUpperCase()] || COUNTRY_FLAG_CODES[str];
-    if (code) return `<img src="https://flagcdn.com/w20/${code}.png" style="height:11px; width:14px; vertical-align:middle; margin-right:2px; border-radius:1px; display:inline-block;">`;
-    return "";
+  // 新增：GOH 掃描器控制邏輯
+  function startGohLocationScanner() {
+    const r = document.getElementById('gohReader'); const btn = document.getElementById('stopGohScanLocBtn');
+    r.style.display = 'block'; btn.style.display = 'block';
+    if (!gohHtml5QrCode) gohHtml5QrCode = new Html5Qrcode("gohReader"); 
+    
+    gohHtml5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10 },
+      (text) => { 
+        document.getElementById('gohLocInput').value = text; 
+        stopGohLocationScanner(); 
+        handleGohLocInput(true); 
+      }, 
+      () => {}
+    ).catch(e => { 
+      const msg = document.getElementById('gohMsgArea');
+      if (msg) msg.textContent = "CAMERA ERROR: " + (e.message || e);
+      stopGohLocationScanner(); 
+    });
+  }
+
+  function stopGohLocationScanner() {
+    const r = document.getElementById('gohReader'); const btn = document.getElementById('stopGohScanLocBtn');
+    if (gohHtml5QrCode && gohHtml5QrCode.isScanning) gohHtml5QrCode.stop().then(()=>{r.style.display='none';btn.style.display='none';});
+    else { r.style.display='none'; btn.style.display='none'; }
+  }
+
+  function handleGohLocInput(isFromCamera = false) {
+      let val = document.getElementById('gohLocInput').value.trim().toUpperCase();
+      if (!val) return;
+      
+      // 純數字自動補齊 T 前綴 (如 13 變 T013)
+      if (/^\d+$/.test(val)) {
+          val = "T" + val.padStart(3, '0');
+      }
+      
+      activeGohSearchKeyword = val;
+      document.getElementById('gohLocInput').value = ""; 
+      document.getElementById('clearGohSearchBtn').style.display = "flex";
+
+      if (isFromCamera) {
+          let matchCount = 0;
+          globalGohData.forEach(i => {
+              let loc = String(i["LOCATION_ID"] || "").toUpperCase();
+              let pallet = getGohPallet(i).toUpperCase();
+              let barcode = "";
+              Object.keys(i).forEach(k => {
+                  let kl = k.toUpperCase();
+                  if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = String(i[k]).toUpperCase();
+              });
+              
+              if (loc.includes(val) || pallet.includes(val) || barcode.includes(val)) {
+                  matchCount++;
+              }
+          });
+          document.getElementById('gohLargeLoc').textContent = val;
+          document.getElementById('gohLargePlCount').textContent = matchCount;
+          document.getElementById('gohLargePopupOverlay').style.display = 'flex';
+      }
+      renderGohTable();
+  }
+
+  function clearGohSearch() {
+      activeGohSearchKeyword = "";
+      document.getElementById('gohLocInput').value = "";
+      document.getElementById('clearGohSearchBtn').style.display = "none";
+      renderGohTable();
+  }
+
+  function closeGohLargePopup(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('gohLargePopupOverlay').style.display = 'none';
+  }
+
+  function scanNextGohLoc() {
+      document.getElementById('gohLargePopupOverlay').style.display = 'none';
+      startGohLocationScanner();
   }
 
   function fetchAndUpdateSyncTime(targetTitle, elementId) {
@@ -2381,7 +2480,15 @@
       
       globalGohData = data.filter(item => {
         const loc = String(item.LOCATION_ID || "").toUpperCase();
-        return (/[TR]\d+/.test(loc) || loc.startsWith("RECEIVE")) && loc !== "TRANST001";
+        const pallet = String(item["Pallet ID"] || "").toUpperCase().trim();
+        
+        // 條件 1：LOC 必須是 T 或 R 開頭，且不能是 TRANST001
+        const validLoc = (loc.startsWith("T") || loc.startsWith("R")) && loc !== "TRANST001";
+        
+        // 條件 2：PL 必須是 T 開頭
+        const validPl = pallet.startsWith("T");
+
+        return validLoc && validPl;
       });
 
       gohMultiFilters.receipt.clear();
@@ -2506,9 +2613,11 @@
   function renderGohTable() {
       let totRows = 0;
       let totQty = 0;
+      let tablePallets = new Set();
+      let prevPl = "";
 
       let h = `<table class="compact-table"><thead><tr>
-        <th>LOC</th><th>PL</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
+        <th>LOC</th><th>PL</th><th>TAG</th><th>BARCODE</th><th>QTY</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
       </tr></thead><tbody>`;
 
       globalGohData.forEach(i => {
@@ -2520,9 +2629,25 @@
 
         if (!passReceipt || !passPl) return;
 
+        // 新增：處理搜尋/掃描關鍵字過濾
+        if (activeGohSearchKeyword) {
+            let locUp = String(i["LOCATION_ID"] || "").toUpperCase();
+            let plUp = pallet.toUpperCase();
+            let bcUp = "";
+            Object.keys(i).forEach(k => {
+                let kl = k.toUpperCase();
+                if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") bcUp = String(i[k]).toUpperCase();
+            });
+            
+            if (!locUp.includes(activeGohSearchKeyword) && !plUp.includes(activeGohSearchKeyword) && !bcUp.includes(activeGohSearchKeyword)) {
+                return; // 未命中關鍵字則跳過
+            }
+        }
+
         let loc = String(i["LOCATION_ID"] || "").toUpperCase();
         let tag = i["TAG_ID"] || "";
         let coo = i["User Def Type 1"] || "";
+        
         let size = "";
         let barcode = "";
         let qty = 0;
@@ -2536,220 +2661,6 @@
         
         totRows++;
         totQty += qty;
-
-        let displayQty = qty === 0 ? "" : qty;
-
-        h += `<tr>
-          <td>${loc}</td>
-          <td style="font-family:'Roboto Mono', monospace;">${formatDbPalletStr(pallet)}</td>
-          <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
-          <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
-          <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
-          <td>${coo}</td>
-          <td>${size}</td>
-          <td style="font-size:12px; color:var(--text-main);">${receipt === "NO_RECEIPT" ? "" : receipt}</td>
-        </tr>`;
-      });
-      h += `</tbody></table>`;
-
-      if (document.getElementById('totGohRows')) document.getElementById('totGohRows').textContent = totRows;
-      if (document.getElementById('totGohQty')) document.getElementById('totGohQty').textContent = totQty;
-
-      document.getElementById('gohSummaryBox').style.display = "flex";
-      document.getElementById('gohTableContainer').innerHTML = h;
-  }
-
-  let globalStData = [];
-  let activeStFilter = 'ALL';
-
-  function toggleStEmptyFilter() {
-      isStHideEmpty = !isStHideEmpty;
-      const btn = document.getElementById('btnToggleStEmpty');
-      if(isStHideEmpty) {
-          btn.classList.add('active');
-          btn.style.color = 'var(--status-yellow)';
-          btn.style.borderColor = 'var(--status-yellow)';
-          btn.innerHTML = '<i class="ph ph-eye-slash"></i>';
-      } else {
-          btn.classList.remove('active');
-          btn.style.color = 'var(--text-muted)';
-          btn.style.borderColor = 'var(--border-light)';
-          btn.innerHTML = '<i class="ph ph-eye"></i>';
-      }
-      applyStEmptyVisibility();
-  }
-
-  function applyStEmptyVisibility() {
-      const btns = document.querySelectorAll('#stFilterGroup .st-loc-btn');
-      btns.forEach(btn => {
-          if (btn.innerText.includes('(0)')) {
-              btn.style.display = isStHideEmpty ? 'none' : 'flex';
-          }
-      });
-  }
-
-  function handleStLocInput(isFromCamera = false) {
-      let val = document.getElementById('stLocInput').value.trim().toUpperCase();
-      if (!val) return;
-      
-      if (/^\d+$/.test(val)) {
-          val = "STAGE" + val.padStart(3, '0');
-      } else if (val.startsWith('ST') && !val.startsWith('STAGE')) {
-          val = val.replace('ST', 'STAGE');
-      }
-      
-      filterSt(val);
-      document.getElementById('stLocInput').value = ""; 
-
-      if (isFromCamera) {
-          let uniquePls = new Set();
-          globalStData.forEach(i => {
-              if (String(i["LOCATION_ID"] || "").toUpperCase() === val) {
-                  let pallet = String(i["Pallet ID"] || "").trim();
-                  if (pallet && pallet !== "-") uniquePls.add(pallet);
-              }
-          });
-          document.getElementById('stLargeLoc').textContent = val;
-          document.getElementById('stLargePlCount').textContent = uniquePls.size;
-          document.getElementById('stLargePopupOverlay').style.display = 'flex';
-      }
-  }
-
-  function closeStLargePopup(e) {
-      if (e && e.target !== e.currentTarget) return;
-      document.getElementById('stLargePopupOverlay').style.display = 'none';
-  }
-
-  function scanNextStLoc() {
-      document.getElementById('stLargePopupOverlay').style.display = 'none';
-      startStLocationScanner();
-  }
-
-  function loadStDataList() {
-    let timer = startLoadingMsg('stMsgArea', 'ST INVENTORY');
-    window.google.script.run.withSuccessHandler((invRes) => {
-      stopLoadingMsg('stMsgArea', timer);
-      const data = invRes || [];
-      
-      globalStData = data.filter(item => {
-        const loc = String(item.LOCATION_ID || "").toUpperCase();
-        return loc.startsWith("ST");
-      });
-
-      const locPalletMap = new Map();
-      const totalStPallets = new Set();
-      
-      globalStData.forEach(item => {
-          const loc = String(item.LOCATION_ID || "").toUpperCase();
-          const pallet = String(item["Pallet ID"] || "").trim();
-          
-          if (!locPalletMap.has(loc)) locPalletMap.set(loc, new Set());
-          
-          if (pallet && pallet !== "-") {
-              locPalletMap.get(loc).add(pallet);
-              totalStPallets.add(pallet);
-          }
-      });
-
-      const uniqueLocs = Array.from(locPalletMap.keys()).sort();
-      
-      const filterGroup = document.getElementById('stFilterGroup');
-      filterGroup.style.display = "flex";
-      filterGroup.style.flexWrap = "wrap";
-      filterGroup.style.gap = "4px";
-      filterGroup.style.marginBottom = "4px";
-
-      let fHtml = `<button class="filter-btn-compact active" data-loc="ALL" onclick="filterSt('ALL')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; border-radius:4px;">ALL <span style="color:var(--text-main); font-size:13px; font-weight:700;">(${totalStPallets.size})</span></button>`;
-      
-      let eyeIcon = isStHideEmpty ? '<i class="ph ph-eye-slash"></i>' : '<i class="ph ph-eye"></i>';
-      let eyeStyle = isStHideEmpty ? 'color:var(--status-yellow); border-color:var(--status-yellow);' : 'color:var(--text-muted); border-color:var(--border-light);';
-      let eyeClass = isStHideEmpty ? 'filter-btn-compact active' : 'filter-btn-compact';
-      fHtml += `<button id="btnToggleStEmpty" class="${eyeClass}" onclick="toggleStEmptyFilter()" style="padding: 4px 8px; font-size: 14px !important; justify-content: center; text-align: center; border-radius:4px; ${eyeStyle}">${eyeIcon}</button>`;
-      
-      uniqueLocs.forEach(loc => {
-          let palletCount = locPalletMap.get(loc).size;
-          let displayLoc = loc.replace(/STAGE/ig, "ST");
-          fHtml += `<button class="filter-btn-compact st-loc-btn" data-loc="${loc}" onclick="filterSt('${loc}')" style="padding: 4px 6px; font-size: 12px !important; justify-content: center; text-align: center; color:var(--status-yellow); border-color:var(--border-light); border-radius:4px;">${displayLoc} <span style="color:var(--text-main); font-size:13px; font-weight:700;">(${palletCount})</span></button>`;
-      });
-      filterGroup.innerHTML = fHtml;
-
-      activeStFilter = 'ALL';
-      renderStTable();
-      applyStEmptyVisibility();
-
-    }).withFailureHandler(e => {
-      stopLoadingMsg('stMsgArea', timer);
-      document.getElementById('stMsgArea').textContent = "ERROR: " + e.message;
-    }).getAllInventoryData();
-  }
-
-  function filterSt(loc) {
-      activeStFilter = loc;
-      document.querySelectorAll('#stFilterGroup .filter-btn-compact').forEach(btn => {
-          if (btn.getAttribute('data-loc') === loc) {
-              btn.classList.add('active');
-              btn.style.borderColor = 'var(--status-yellow)';
-          } else {
-              btn.classList.remove('active');
-              btn.style.borderColor = 'var(--border-light)';
-          }
-      });
-      renderStTable();
-  }
-
-  function renderStTable() {
-      let totRows = 0;
-      const tablePallets = new Set();
-
-      let h = `<table class="compact-table"><thead><tr>
-        <th>LOC</th><th>PL</th><th>BARCODE</th><th>QTY</th><th>TAG</th><th>COO</th><th>SIZE</th><th>RECEIPT</th>
-      </tr></thead><tbody>`;
-
-      let filteredData = globalStData.filter(i => {
-          let loc = String(i["LOCATION_ID"] || "").toUpperCase();
-          if (activeStFilter !== 'ALL' && loc !== activeStFilter) return false;
-          return true;
-      });
-
-      filteredData.sort((a, b) => {
-          let plA = String(a["Pallet ID"] || "").trim();
-          let plB = String(b["Pallet ID"] || "").trim();
-          return plA.localeCompare(plB);
-      });
-
-      let prevPl = null;
-
-      filteredData.forEach(i => {
-        let loc = String(i["LOCATION_ID"] || "").toUpperCase();
-        let tag = i["TAG_ID"] || "";
-        let coo = i["User Def Type 1"] || "";
-        let pallet = String(i["Pallet ID"] || "").trim();
-        
-        let receipt = "";
-        let size = "";
-        let barcode = "";
-        let qty = 0;
-        
-        Object.keys(i).forEach(k => {
-            let kl = k.toUpperCase();
-            if (kl === "RECEIPT_ID") { receipt = i[k]; }
-        });
-        
-        if (!receipt) {
-            Object.keys(i).forEach(k => {
-                let kl = k.toUpperCase();
-                if (kl === "RECEIPT" || kl === "RECEIPT DSTAMP" || kl === "RECEIPT_DSTAMP") receipt = i[k];
-            });
-        }
-        
-        Object.keys(i).forEach(k => {
-            let kl = k.toUpperCase();
-            if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
-            if (kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(i[k]) || 0;
-            if (kl === "SKU SIZE" || kl === "SIZE") size = i[k];
-        });
-        
-        totRows++;
         if (pallet && pallet !== "-") {
             tablePallets.add(pallet);
         }
@@ -2765,12 +2676,22 @@
         }
         prevPl = pallet; 
 
+        // 處理 BARCODE 樣式，最後三碼獨立為 16px 粗體
+        let formattedBarcode = barcode;
+        if (barcode && barcode.length > 3) {
+            let prefix = barcode.substring(0, barcode.length - 3);
+            let suffix = barcode.substring(barcode.length - 3);
+            formattedBarcode = `<span style="font-size:13px; font-weight:normal;">${prefix}</span><span style="font-size:16px; font-weight:700;">${suffix}</span>`;
+        } else if (barcode) {
+            formattedBarcode = `<span style="font-size:16px; font-weight:700;">${barcode}</span>`;
+        }
+
         h += `<tr>
           <td>${displayLoc}</td>
           <td style="font-family:'Roboto Mono', monospace;">${displayHtml}</td>
-          <td style="color:var(--accent-cyan); font-size:16px; font-weight:700;">${barcode}</td>
+          <td style="color:var(--status-yellow); font-size:16px; font-weight:700;">${tag}</td>
+          <td style="color:var(--accent-cyan);">${formattedBarcode}</td>
           <td style="color:var(--status-green); font-weight:700; font-size:16px;">${displayQty}</td>
-          <td style="color:var(--status-yellow); font-size:13px;">${tag}</td>
           <td>${coo}</td>
           <td>${size}</td>
           <td style="font-size:12px; color:var(--text-main);">${receipt}</td>
@@ -2778,11 +2699,11 @@
       });
       h += `</tbody></table>`;
 
-      if (document.getElementById('totStRows')) document.getElementById('totStRows').textContent = totRows;
-      if (document.getElementById('totStQty')) document.getElementById('totStQty').textContent = tablePallets.size;
+      if (document.getElementById('totGohRows')) document.getElementById('totGohRows').textContent = totRows;
+      if (document.getElementById('totGohQty')) document.getElementById('totGohQty').textContent = totQty;
 
-      document.getElementById('stSummaryBox').style.display = "flex";
-      document.getElementById('stTableContainer').innerHTML = h;
+      document.getElementById('gohSummaryBox').style.display = "flex";
+      document.getElementById('gohTableContainer').innerHTML = h;
   }
   
   // ==========================================
