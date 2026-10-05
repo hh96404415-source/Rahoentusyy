@@ -449,6 +449,30 @@
   </div>
 </div>
 
+<div id="gohLargePopupOverlay" class="glass-overlay" style="display: none; z-index: 99999;" onclick="closeGohLargePopup(event)">
+  <div class="glass-box" style="border-color: #d946ef; max-width: 90%; width: 400px; padding: 30px 20px;" onclick="event.stopPropagation();">
+    <div style="color: var(--text-muted); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 2px;">SCANNED (掃描目標)</div>
+    <div id="gohLargeTarget" style="color: #fff; font-size: 40px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 4px 15px rgba(0,0,0,0.6); line-height: 1.1; margin-bottom: 24px; word-break: break-all;">--</div>
+    
+    <div style="display: flex; justify-content: space-around; width: 100%; margin-bottom: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+        <div style="text-align: center; flex: 1;">
+            <div style="color: var(--text-muted); font-size: 14px; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;">TAGS (款號數)</div>
+            <div id="gohLargeTagCount" style="color: var(--status-yellow); font-size: 64px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 0 15px rgba(251,191,36,0.5); line-height: 1;">0</div>
+        </div>
+        <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+        <div style="text-align: center; flex: 1;">
+            <div style="color: var(--text-muted); font-size: 14px; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;">QTY (總數量)</div>
+            <div id="gohLargeQtySum" style="color: var(--status-green); font-size: 64px; font-weight: 900; font-family: 'Roboto Mono', monospace; text-shadow: 0 0 15px rgba(52,211,153,0.5); line-height: 1;">0</div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; width: 100%;">
+      <button style="flex: 1; padding: 16px 8px; font-size: 16px !important; border-radius: 12px; background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="scanNextGohLoc()"><i class="ph ph-camera"></i> 繼續掃描</button>
+      <button class="primary-btn" style="flex: 1; padding: 16px 8px; font-size: 18px !important; border-radius: 12px; box-shadow: 0 8px 20px rgba(217, 70, 239, 0.4); background-color: #d946ef; border-color: #d946ef; display: flex; align-items: center; justify-content: center;" onclick="closeGohLargePopup()">確 認 (OK)</button>
+    </div>
+  </div>
+</div>
+
 <div class="container" id="mainContainer" style="display: none;">
   
   <div class="sys-header">
@@ -1246,7 +1270,7 @@
       (text) => { 
         document.getElementById('gohSearchInput').value = text; 
         stopGohScanner(); 
-        handleGohUniversalSearch(); // 掃描成功後觸發萬用搜尋
+        handleGohUniversalSearch(true); // 掃描成功後觸發帶有大彈窗的搜尋
       }, 
       () => {}
     ).catch(e => { 
@@ -2557,8 +2581,18 @@
       renderGohTable();
   }
 
+  function closeGohLargePopup(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('gohLargePopupOverlay').style.display = 'none';
+  }
+
+  function scanNextGohLoc() {
+      document.getElementById('gohLargePopupOverlay').style.display = 'none';
+      startGohScanner();
+  }
+
   // 處理 GOH 萬用搜尋
-  function handleGohUniversalSearch() {
+  function handleGohUniversalSearch(isFromCamera = false) {
       let val = document.getElementById('gohSearchInput').value.trim().toUpperCase();
       if (!val) return;
       
@@ -2576,6 +2610,48 @@
       renderGohFilters(); // 重繪空狀態的過濾器按鈕
       
       renderGohTable(); // 執行過濾並渲染表格
+
+      if (isFromCamera) {
+          let uniqueTags = new Set();
+          let totalQty = 0;
+          let kw = activeGohSearchKeyword;
+
+          globalGohData.forEach(i => {
+              let loc = String(i["LOCATION_ID"] || "").toUpperCase();
+              let pallet = getGohPallet(i).toUpperCase();
+              let tag = i["TAG_ID"] || "";
+              let barcode = "";
+              
+              Object.keys(i).forEach(k => {
+                  let kl = k.toUpperCase();
+                  if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
+              });
+
+              let bcStr = barcode.toUpperCase();
+              let tgStr = tag.toUpperCase();
+              
+              // 若與搜尋條件不符則跳過 (邏輯同 renderGohTable)
+              if (!loc.includes(kw) && !pallet.includes(kw) && !bcStr.includes(kw) && !tgStr.includes(kw)) {
+                  return;
+              }
+
+              // 計算 TAG Unique Count 與 QTY Sum
+              if (tag && tag !== "-") uniqueTags.add(tag);
+              
+              let qty = 0;
+              Object.keys(i).forEach(k => {
+                  let kl = k.toUpperCase();
+                  if (kl === "QTY_ON_HAND" || kl === "QTY") qty = parseFloat(i[k]) || 0;
+              });
+              totalQty += qty;
+          });
+
+          // 更新彈窗資料並顯示
+          document.getElementById('gohLargeTarget').textContent = kw;
+          document.getElementById('gohLargeTagCount').textContent = uniqueTags.size;
+          document.getElementById('gohLargeQtySum').textContent = totalQty;
+          document.getElementById('gohLargePopupOverlay').style.display = 'flex';
+      }
   }
 
   // 清除 GOH 萬用搜尋
