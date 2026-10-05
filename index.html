@@ -2619,12 +2619,12 @@
           globalGohData.forEach(i => {
               let loc = String(i["LOCATION_ID"] || "").toUpperCase();
               let pallet = getGohPallet(i).toUpperCase();
-              let tag = i["TAG_ID"] || "";
+              let tag = String(i["TAG_ID"] || "");
               let barcode = "";
               
               Object.keys(i).forEach(k => {
                   let kl = k.toUpperCase();
-                  if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
+                  if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = String(i[k] || "");
               });
 
               let bcStr = barcode.toUpperCase();
@@ -2677,12 +2677,12 @@
         let pallet = getGohPallet(i);
         
         let loc = String(i["LOCATION_ID"] || "").toUpperCase();
-        let tag = i["TAG_ID"] || "";
+        let tag = String(i["TAG_ID"] || "");
         let barcode = "";
         
         Object.keys(i).forEach(k => {
             let kl = k.toUpperCase();
-            if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = i[k];
+            if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = String(i[k] || "");
         });
 
         // 萬用關鍵字過濾邏輯
