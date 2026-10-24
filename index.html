@@ -319,11 +319,9 @@
         border-radius: 4px; padding: 2px 4px;
     }
     
-    /* AR 擴增實境專屬樣式 */
     .ar-viewport { position: relative; width: 100%; height: calc(100vh - 150px); min-height: 400px; max-height: 600px; background: #000; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-light); }
     .ar-video, .ar-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
     
-    /* 覆寫 html5-qrcode 預設樣式以滿版呈現 */
     #arReader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; border: none !important; }
     #arReader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
@@ -574,6 +572,10 @@
         <button class="icon-btn" style="min-width: 24px; height:24px;" onclick="forceRefreshData()"><i class="ph ph-arrows-clockwise" style="font-size:12px;"></i></button>
       </div>
     </div>
+    
+    <!-- 訂單國家篩選按鈕群組容器 -->
+    <div id="orderStatusFilterGroup" style="display: none; flex-direction: column; gap: 4px; margin-bottom: 6px;"></div>
+
     <div class="compact-table-wrapper"><div id="orderStatusTableContainer"></div></div>
   </div>
 
@@ -694,7 +696,6 @@
 
   <!-- GOH View -->
   <div id="gohView" class="view-section" style="display: none;">
-    <!-- 新增獨立的 GOH 掃描介面 (不與 ST 共用) -->
     <div id="gohReader" class="camera-wrapper" style="display:none; margin-bottom: 4px;"></div>
     <button id="stopGohScanLocBtn" style="display:none; width: 100%; margin-bottom: 8px; background: var(--bg-hover);" onclick="stopGohScanner()">CLOSE CAMERA</button>
     
@@ -704,7 +705,6 @@
         <input type="text" id="gohSearchInput" placeholder="T..." onkeydown="if(event.key === 'Enter') handleGohUniversalSearch()" onfocus="this.style.borderColor='var(--accent-cyan)'" onblur="this.style.borderColor='var(--border-light)'" style="width: 55px; min-width: 55px; padding: 2px 4px; font-size: 13px !important; height: 24px; border-radius: 4px; margin: 0; background: var(--bg-deep); color: var(--text-main); border: 1px solid var(--border-light); font-family: 'Roboto Mono', monospace; outline: none; transition: all 0.2s;">
         <button id="gohScanLocBtn" class="icon-btn btn-camera" onclick="startGohScanner()" style="min-width: 48px; max-width: 48px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; display:flex; align-items:center; justify-content:center;"><i class="ph ph-camera" style="font-size:14px;"></i></button>
         <button class="primary-btn icon-btn" onclick="handleGohUniversalSearch()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0;"><i class="ph ph-magnifying-glass" style="font-size:14px;"></i></button>
-        <!-- 清除搜尋按鈕 -->
         <button class="icon-btn" onclick="clearGohSearch()" style="min-width: 24px; max-width: 24px; height: 24px; border-radius: 4px; padding: 0 !important; margin: 0; color: var(--status-red); border-color: rgba(251,113,133,0.3);"><i class="ph ph-x" style="font-size:14px;"></i></button>
       </div>
 
@@ -745,7 +745,6 @@
   <div id="arView" class="view-section" style="display: none;">
     <div id="arMsgArea" class="message"></div>
     
-    <!-- AR 啟動準備畫面 (On-Demand 攔截) -->
     <div id="arStartScreen" style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-light);">
       <i class="ph ph-camera-rotate" style="font-size: 48px; color: var(--accent-cyan); margin-bottom: 16px; opacity: 0.8;"></i>
       <div style="color: var(--text-main); font-size: 16px; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;">VISION PICKING V1</div>
@@ -757,19 +756,15 @@
       </button>
     </div>
 
-    <!-- AR 實際應用視窗 -->
     <div id="arAppContainer" class="ar-viewport" style="display: none;" onclick="if(arIsFrozen) resetARState();">
-      <!-- 頂部狀態列 -->
       <div style="position: absolute; top: 12px; left: 12px; font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: bold; text-shadow: 0 0 5px #000; z-index: 30; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">
         <div id="arStatusIndicator" style="color: var(--accent-cyan);"><i class="ph-fill ph-record blink" style="color:var(--status-red);"></i> AUTO SCAN LIVE</div>
         <div id="arSysMsg" style="color: var(--status-yellow); margin-top: 2px; font-size: 9px;">Scanning for barcodes...</div>
       </div>
 
-      <!-- AR 引擎容器 -->
       <div id="arReader"></div>
       <canvas id="arSnapshotView" class="ar-canvas" style="display: none;"></canvas>
 
-      <!-- HUD 遮罩 -->
       <div class="ar-hud" id="arHudOverlay">
         <div class="ar-reticle" id="arReticleBox">
           <div class="ar-reticle-inner"></div>
@@ -780,15 +775,12 @@
         <div class="ar-scan-line" id="arScanLine" style="animation: arScanAnim 1.5s ease-in-out infinite;"></div>
       </div>
 
-      <!-- 連接線 (SVG) -->
       <svg class="ar-lines" id="arLines">
         <line x1="50%" y1="50%" x2="20%" y2="25%" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 4" />
         <line x1="50%" y1="50%" x2="65%" y2="70%" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4 4" />
       </svg>
 
-      <!-- 虛擬標籤容器 -->
       <div id="arTagsContainer">
-        <!-- 專為長者設計的超大字體資訊卡 -->
         <div class="ar-tag" id="arTag1" style="top: 15%; left: 5%; right: 5%; border-color: var(--accent-cyan); text-align: center; border-radius: 12px; border-left: 6px solid var(--accent-cyan); background: rgba(15, 23, 42, 0.95); box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(56,189,248,0.2);">
           <div style="font-size: 16px; color: var(--text-muted); margin-bottom: 4px; letter-spacing: 2px; font-weight: bold;">LOCATION (真實儲位)</div>
           <div id="arTag1_Loc" style="font-size: 48px; font-weight: 900; line-height: 1.1; color: var(--accent-cyan); text-shadow: 0 0 15px rgba(56,189,248,0.5); word-break: break-all; margin-bottom: 24px;">--</div>
@@ -807,7 +799,6 @@
         </div>
       </div>
 
-      <!-- 底部控制鈕 -->
       <div class="ar-control-panel">
         <button id="arActionBtn" class="primary-btn" style="width: 100%; padding: 14px; font-size: 16px !important; background: rgba(15, 23, 42, 0.85); border: 1px solid var(--status-red); color: var(--status-red); backdrop-filter: blur(4px);" onclick="stopARCamera()">
           <i class="ph ph-stop-circle"></i> 關閉 AR (CLOSE)
@@ -1162,7 +1153,6 @@
   let stHtml5QrCode = null;
   let isStHideEmpty = true;
   
-  // 新增獨立的 GOH 相機變數
   let gohHtml5QrCode = null;
   let activeGohSearchKeyword = "";
 
@@ -1258,7 +1248,6 @@
     else { r.style.display='none'; btn.style.display='none'; }
   }
 
-  // 獨立的 GOH 鏡頭啟動邏輯
   function startGohScanner() {
     const r = document.getElementById('gohReader'); const btn = document.getElementById('stopGohScanLocBtn');
     r.style.display = 'block'; btn.style.display = 'block';
@@ -1270,7 +1259,7 @@
       (text) => { 
         document.getElementById('gohSearchInput').value = text; 
         stopGohScanner(); 
-        handleGohUniversalSearch(true); // 掃描成功後觸發帶有大彈窗的搜尋
+        handleGohUniversalSearch(true); 
       }, 
       () => {}
     ).catch(e => { 
@@ -1518,22 +1507,145 @@
     }).withFailureHandler(e => { stopLoadingMsg('listMsgArea', loadTimer); document.getElementById('listMsgArea').textContent="ERROR:"+e.message; }).getAlQtyList();
   }
 
+  // 訂單分頁專屬的國家多選過濾狀態
+  const orderStatusMultiFilters = { country: new Set() };
+  let globalOrderStatusData = [];
+
   function renderOrderStatusData(res) {
-    const mc = document.getElementById('orderStatusMetricsContainer'); mc.innerHTML = ""; const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
+    globalOrderStatusData = res.data || [];
+    const mc = document.getElementById('orderStatusMetricsContainer'); 
+    mc.innerHTML = ""; 
+    const tKeys = ["-AMR", "-M", "-PACK", "-MA", "01-09", "01~09"];
+    
     const countryIdx = (res.headers || []).findIndex(h => h && h.toString().trim().toUpperCase() === "COUNTRY");
-    (res.headers || []).forEach((h, idx) => { if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,''); if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){ let v = res.totals[idx] || (res.data||[]).reduce((a,r)=>a+(parseFloat(r[h])||0),0); mc.innerHTML += `<div class="summary-item-compact">${h.trim()}:<span>${v}</span></div>`; } });
+    
+    const countryCounts = new Map();
+    globalOrderStatusData.forEach(i => {
+        if (countryIdx !== -1) {
+            let rawCountry = String(i[res.headers[countryIdx]] || "").trim().toUpperCase();
+            if (rawCountry && rawCountry !== "-") {
+                countryCounts.set(rawCountry, (countryCounts.get(rawCountry) || 0) + 1);
+            }
+        }
+    });
+
+    const filterGroup = document.getElementById('orderStatusFilterGroup');
+    if (countryIdx !== -1 && countryCounts.size > 0) {
+        filterGroup.style.display = "flex";
+        filterGroup.style.flexDirection = "column";
+        filterGroup.style.gap = "4px";
+        filterGroup.style.marginBottom = "6px";
+
+        const hasCountryFilter = orderStatusMultiFilters.country.size > 0;
+        let fHtml = `<div class="goh-filter-row" style="display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05);">`;
+        fHtml += `<span class="goh-filter-label" style="font-size: 10px; color: var(--accent-cyan); font-family: 'Roboto Mono', monospace; font-weight: bold; display: flex; align-items: center; justify-content: center; min-width: 32px; background: rgba(56, 189, 248, 0.1); border-radius: 4px; padding: 2px 4px;">NAT</span>`;
+        
+        fHtml += `<button class="filter-btn-compact ${hasCountryFilter ? '' : 'active'}" data-type="country" data-val="ALL" onclick="toggleOrderStatusFilter('ALL')">ALL <span style="color:var(--text-muted); font-size:9px;">(${globalOrderStatusData.length})</span></button>`;
+        
+        Array.from(countryCounts.keys()).sort().forEach(countryCode => {
+            let isActive = orderStatusMultiFilters.country.has(countryCode) ? 'active' : '';
+            let style = orderStatusMultiFilters.country.has(countryCode) ? 'color:var(--status-yellow); border-color:var(--status-yellow);' : 'color:var(--status-yellow); border-color:var(--border-light);';
+            let flagHtml = getFlagHtml(countryCode);
+            fHtml += `<button class="filter-btn-compact ${isActive}" data-type="country" data-val="${countryCode}" onclick="toggleOrderStatusFilter('${countryCode}')" style="${style}">${flagHtml}${countryCode} <span style="color:var(--text-muted); font-size:9px;">(${countryCounts.get(countryCode)})</span></button>`;
+        });
+        fHtml += `</div>`;
+        filterGroup.innerHTML = fHtml;
+    } else {
+        filterGroup.style.display = "none";
+    }
+
+    (res.headers || []).forEach((h, idx) => { if(!h)return; const n = h.toString().trim().toUpperCase().replace(/\s+/g,''); if(tKeys.some(tk=>tk.replace(/\s+/g,'')===n)){ let v = res.totals[idx] || (globalOrderStatusData).reduce((a,r)=>a+(parseFloat(r[h])||0),0); mc.innerHTML += `<div class="summary-item-compact">${h.trim()}:<span>${v}</span></div>`; } });
     document.getElementById('orderStatusSummaryBox').style.display = "flex";
     
-    let h = `<table class="compact-table"><thead><tr>`; (res.headers || []).forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); h+=`</tr>`;
-    if(res.totals && res.totals.length>0){ h+=`<tr class="gao-total-row">`; (res.headers || []).forEach((c,i)=>{ let v=res.totals[i]||""; const cln=c?c.toString().trim().toUpperCase():""; let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v; if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${v}</td>`; }); h+=`</tr>`; }
-    h+=`</thead><tbody>`;
-    (res.data||[]).forEach(i => {
-      h+=`<tr>`; (res.headers || []).forEach(c => {
-        let v=i[c]!==undefined?i[c]:""; const cln=c?c.toString().trim().toUpperCase():""; let fg = ""; if (cln === "COUNTRYC" || cln === "COUNTRY_C") { const rawCountry = countryIdx !== -1 ? i[res.headers[countryIdx]] : ""; fg = getFlagHtml(rawCountry); }
-        let cls = ""; const vs = String(v).trim().toUpperCase(); if(vs==="MON"||vs.endsWith("MON")||vs.endsWith("/MON")) cls="highlight-mon"; if(cln==="SCND") cls+=" text-green"; else if(cln==="-SCN"){ cls+=" text-red"; if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; }
-        if (v === 0 || String(v).trim() === "0") v = ""; h+=`<td class="${cls}">${fg}${v}</td>`;
-      }); h+=`</tr>`;
-    }); h+=`</tbody></table>`; document.getElementById('orderStatusTableContainer').innerHTML = h;
+    renderOrderStatusTableCore(res.headers, res.totals, countryIdx);
+  }
+
+  function toggleOrderStatusFilter(val) {
+      if (val === 'ALL') {
+          orderStatusMultiFilters.country.clear();
+      } else {
+          if (orderStatusMultiFilters.country.has(val)) {
+              orderStatusMultiFilters.country.delete(val);
+          } else {
+              orderStatusMultiFilters.country.add(val);
+          }
+      }
+
+      document.querySelectorAll('#orderStatusFilterGroup .filter-btn-compact').forEach(btn => {
+          let btnVal = btn.getAttribute('data-val');
+          if (btnVal === 'ALL') {
+              if (orderStatusMultiFilters.country.size === 0) btn.classList.add('active');
+              else btn.classList.remove('active');
+          } else {
+              if (orderStatusMultiFilters.country.has(btnVal)) {
+                  btn.classList.add('active');
+                  btn.style.borderColor = btn.style.color;
+              } else {
+                  btn.classList.remove('active');
+                  btn.style.borderColor = 'var(--border-light)';
+              }
+          }
+      });
+
+      renderOrderStatusTableCore(window.lastOrderStatusHeaders || [], window.lastOrderStatusTotals || [], window.lastOrderStatusCountryIdx || -1);
+  }
+
+  function renderOrderStatusTableCore(headers, totals, countryIdx) {
+      window.lastOrderStatusHeaders = headers;
+      window.lastOrderStatusTotals = totals;
+      window.lastOrderStatusCountryIdx = countryIdx;
+
+      let h = `<table class="compact-table"><thead><tr>`; 
+      headers.forEach(c => h+=`<th>${getCustomLabel(c)}</th>`); 
+      h+=`</tr>`;
+      
+      if(totals && totals.length > 0){ 
+          h+=`<tr class="gao-total-row">`; 
+          headers.forEach((c,i)=>{ 
+              let v = totals[i]||""; 
+              const cln = c?c.toString().trim().toUpperCase():""; 
+              let cls = cln==="SCND"?"text-green":(cln==="-SCN"?"text-red":""); 
+              if(cln==="-SCN" && v && !String(v).startsWith("-")) v="-"+v; 
+              if (v === 0 || String(v).trim() === "0") v = ""; 
+              h+=`<td class="${cls}">${v}</td>`; 
+          }); 
+          h+=`</tr>`; 
+      }
+      h+=`</thead><tbody>`;
+
+      const hasFilter = orderStatusMultiFilters.country.size > 0;
+
+      globalOrderStatusData.forEach(i => {
+          let rowCountry = countryIdx !== -1 ? String(i[headers[countryIdx]] || "").trim().toUpperCase() : "";
+          
+          if (hasFilter && !orderStatusMultiFilters.country.has(rowCountry)) {
+              return;
+          }
+
+          h+=`<tr>`; 
+          headers.forEach(c => {
+              let v = i[c] !== undefined ? i[c] : ""; 
+              const cln = c ? c.toString().trim().toUpperCase() : ""; 
+              let fg = ""; 
+              if (cln === "COUNTRYC" || cln === "COUNTRY_C" || cln === "COUNTRY") { 
+                  const rawCountry = countryIdx !== -1 ? i[headers[countryIdx]] : ""; 
+                  fg = getFlagHtml(rawCountry);
+              }
+              let cls = ""; 
+              const vs = String(v).trim().toUpperCase(); 
+              if(vs==="MON"||vs.endsWith("MON")||vs.endsWith("/MON")) cls="highlight-mon"; 
+              if(cln==="SCND") cls+=" text-green"; 
+              else if(cln==="-SCN"){ 
+                  cls+=" text-red"; 
+                  if(v&&v!=="0"&&v!=="-"&&!String(v).startsWith("-")) v="-"+v; 
+              }
+              if (v === 0 || String(v).trim() === "0") v = ""; 
+              h+=`<td class="${cls}">${fg}${v}</td>`;
+          }); 
+          h+=`</tr>`;
+      }); 
+      h+=`</tbody></table>`; 
+      document.getElementById('orderStatusTableContainer').innerHTML = h;
   }
 
   function loadOrderStatusList() {
@@ -1656,31 +1768,31 @@
         }
 
         timeCols.forEach((col, idx) => {
-           let colStr = String(col).replace(/\s/g, '').toUpperCase();
-           let isFirst = (idx === 0);
-           let isLast = (idx === timeCols.length - 1);
-           
-           let isLunch = (/^13$|13.*14|13:00|1300|1-2|LUNCH|吃飯/i.test(colStr)) && !(/12.*13/i.test(colStr)); 
+            let colStr = String(col).replace(/\s/g, '').toUpperCase();
+            let isFirst = (idx === 0);
+            let isLast = (idx === timeCols.length - 1);
+            
+            let isLunch = (/^13$|13.*14|13:00|1300|1-2|LUNCH|吃飯/i.test(colStr)) && !(/12.*13/i.test(colStr)); 
 
-           let slotMinutes = 60;
-           if (isLunch) slotMinutes = 0;
-           else if (isFirst) slotMinutes = 40;
-           else if (isLast) slotMinutes = 40;
+            let slotMinutes = 60;
+            if (isLunch) slotMinutes = 0;
+            else if (isFirst) slotMinutes = 40;
+            else if (isLast) slotMinutes = 40;
 
-           totalMinutes += slotMinutes;
+            totalMinutes += slotMinutes;
 
-           if (idx <= lastActiveIndex) {
-             elapsedMinutes += slotMinutes;
-             let qty = parseInt(lastRow[col], 10) || 0;
-             cumulativeQty += qty;
-           }
+            if (idx <= lastActiveIndex) {
+              elapsedMinutes += slotMinutes;
+              let qty = parseInt(lastRow[col], 10) || 0;
+              cumulativeQty += qty;
+            }
         });
 
         if (elapsedMinutes > 0 && cumulativeQty > 0) {
-           let upm = cumulativeQty / Math.max(1, elapsedMinutes);
-           todayPred = Math.round(upm * totalMinutes);
+            let upm = cumulativeQty / Math.max(1, elapsedMinutes);
+            todayPred = Math.round(upm * totalMinutes);
         } else {
-           todayPred = todayTdc; 
+            todayPred = todayTdc; 
         }
       }
     }
@@ -2451,10 +2563,7 @@
         const loc = String(item.LOCATION_ID || "").toUpperCase();
         const pallet = String(item["Pallet ID"] || "").toUpperCase().trim();
         
-        // 條件 1：LOC 必須是 T 或 R 開頭，且不能是 TRANST001
         const validLoc = (loc.startsWith("T") || loc.startsWith("R")) && loc !== "TRANST001";
-        
-        // 條件 2：PL 必須是 T 開頭
         const validPl = pallet.startsWith("T");
 
         return validLoc && validPl;
@@ -2462,8 +2571,8 @@
 
       gohMultiFilters.receipt.clear();
       gohMultiFilters.pl.clear();
-      activeGohSearchKeyword = ""; // 初始化搜尋關鍵字
-      document.getElementById('gohSearchInput').value = ""; // 清空輸入框
+      activeGohSearchKeyword = ""; 
+      document.getElementById('gohSearchInput').value = ""; 
       
       renderGohFilters();
       renderGohTable();
@@ -2591,12 +2700,10 @@
       startGohScanner();
   }
 
-  // 處理 GOH 萬用搜尋
   function handleGohUniversalSearch(isFromCamera = false) {
       let val = document.getElementById('gohSearchInput').value.trim().toUpperCase();
       if (!val) return;
       
-      // 自動轉換純數字為字首加 T 
       if (/^\d+$/.test(val)) {
           val = "T" + val.padStart(3, '0');
           document.getElementById('gohSearchInput').value = val;
@@ -2604,12 +2711,11 @@
       
       activeGohSearchKeyword = val;
       
-      // 當進行全域搜尋時，清除原本的 REC / PL 過濾器狀態，避免互斥
       gohMultiFilters.receipt.clear();
       gohMultiFilters.pl.clear();
-      renderGohFilters(); // 重繪空狀態的過濾器按鈕
+      renderGohFilters(); 
       
-      renderGohTable(); // 執行過濾並渲染表格
+      renderGohTable(); 
 
       if (isFromCamera) {
           let uniqueTags = new Set();
@@ -2630,12 +2736,10 @@
               let bcStr = barcode.toUpperCase();
               let tgStr = tag.toUpperCase();
               
-              // 若與搜尋條件不符則跳過 (邏輯同 renderGohTable)
               if (!loc.includes(kw) && !pallet.includes(kw) && !bcStr.includes(kw) && !tgStr.includes(kw)) {
                   return;
               }
 
-              // 計算 TAG Unique Count 與 QTY Sum
               if (tag && tag !== "-") uniqueTags.add(tag);
               
               let qty = 0;
@@ -2646,7 +2750,6 @@
               totalQty += qty;
           });
 
-          // 更新彈窗資料並顯示
           document.getElementById('gohLargeTarget').textContent = kw;
           document.getElementById('gohLargeTagCount').textContent = uniqueTags.size;
           document.getElementById('gohLargeQtySum').textContent = totalQty;
@@ -2654,7 +2757,6 @@
       }
   }
 
-  // 清除 GOH 萬用搜尋
   function clearGohSearch() {
       activeGohSearchKeyword = "";
       document.getElementById('gohSearchInput').value = "";
@@ -2685,19 +2787,16 @@
             if (kl === "SUPPLIER_SKU_ID" || kl === "BARCODE") barcode = String(i[k] || "");
         });
 
-        // 萬用關鍵字過濾邏輯
         if (activeGohSearchKeyword) {
             let kw = activeGohSearchKeyword;
             let pStr = pallet.toUpperCase();
             let bcStr = barcode.toUpperCase();
             let tgStr = tag.toUpperCase();
             
-            // 如果關鍵字不包含在 LOC, PL, BARCODE 或 TAG 中，則跳過這筆資料
             if (!loc.includes(kw) && !pStr.includes(kw) && !bcStr.includes(kw) && !tgStr.includes(kw)) {
                 return;
             }
         } else {
-            // 原本的 REC / PL 過濾邏輯 (只有在沒有全域搜尋時才生效)
             let passReceipt = gohMultiFilters.receipt.size === 0 || gohMultiFilters.receipt.has(receipt);
             let passPl = gohMultiFilters.pl.size === 0 || gohMultiFilters.pl.has(pallet);
 
@@ -2719,7 +2818,6 @@
 
         let displayQty = qty === 0 ? "" : qty;
         
-        // 處理 BARCODE 顯示邏輯：最後三碼放大，前面縮小
         let displayBarcode = barcode;
         if (barcode && barcode.length > 3) {
             let prefix = barcode.substring(0, barcode.length - 3);
@@ -2975,9 +3073,6 @@
       document.getElementById('stTableContainer').innerHTML = h;
   }
   
-  // ==========================================
-  // AR (Vision Picking) 核心邏輯
-  // ==========================================
   let arHtml5QrCode = null;
   let arIsFrozen = false;
 
@@ -2991,7 +3086,6 @@
           arHtml5QrCode = new Html5Qrcode("arReader");
       }
 
-      // 移除 qrbox 限制，解放全螢幕掃描視野
       arHtml5QrCode.start(
           { facingMode: "environment" },
           { fps: 15 },
@@ -3000,7 +3094,7 @@
                   handleARScanSuccess(decodedText);
               }
           },
-          (err) => { /* 忽略掃描中的未找到條碼錯誤 */ }
+          (err) => {}
       ).then(() => {
           arIsFrozen = false;
           resetARHUD();
@@ -3015,7 +3109,6 @@
       playScanSound('match');
       triggerVibration(60);
 
-      // 1. 抓取當下幀 (Freeze Frame)
       const videoElement = document.querySelector('#arReader video');
       const canvas = document.getElementById('arSnapshotView');
       if (videoElement) {
@@ -3025,26 +3118,20 @@
           ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       }
 
-      // 2. 暫停掃描引擎以省電
       try { if (arHtml5QrCode) arHtml5QrCode.pause(true); } catch(e) {}
 
-      // 3. 切換 UI：隱藏相機，顯示靜止快照
       document.getElementById('arReader').style.display = 'none';
       canvas.style.display = 'block';
 
-      // 4. 更新狀態列
       document.getElementById('arStatusIndicator').innerHTML = '<i class="ph-fill ph-pause" style="color:var(--status-yellow);"></i> FRAME FROZEN';
       document.getElementById('arStatusIndicator').style.color = 'var(--status-yellow)';
       document.getElementById('arSysMsg').innerHTML = `Querying: <span style="color:#fff;">${decodedText}</span>`;
       document.getElementById('arSysMsg').style.color = "var(--accent-cyan)";
 
-      // 停止掃描線
       document.getElementById('arScanLine').style.animation = 'none';
       document.getElementById('arReticleBox').style.opacity = '0';
 
-      // 5. 設定 AR 標籤為載入中狀態並顯示
       let targetLoc = decodedText.trim().toUpperCase();
-      // 防呆：如果是純數字，自動轉換為 STAGE 格式 (支援 1 -> STAGE001)
       if (/^\d+$/.test(targetLoc)) targetLoc = "STAGE" + targetLoc.padStart(3, '0');
       else if (targetLoc.startsWith('ST') && !targetLoc.startsWith('STAGE')) targetLoc = targetLoc.replace('ST', 'STAGE');
 
@@ -3055,7 +3142,6 @@
       document.getElementById('arTag1').classList.add('active');
       document.getElementById('arLines').style.opacity = '1';
 
-      // 6. 背景非同步查詢庫存資料
       window.google.script.run.withSuccessHandler(function(res) {
           if (res && res.data && res.data.length > 0) {
               document.getElementById('arTag1_Pl').textContent = res.uniquePallets || 0;
@@ -3071,7 +3157,6 @@
           document.getElementById('arTag1_Qty').textContent = "ERR";
       }).searchLocation(targetLoc);
 
-      // 7. 底部按鈕更新為重置功能
       const btn = document.getElementById('arActionBtn');
       btn.innerHTML = '<i class="ph ph-hand-tap"></i> 點擊畫面任意處 重新掃描';
       btn.style.borderColor = 'var(--status-yellow)';
@@ -3083,15 +3168,12 @@
       if (!arIsFrozen) return;
       arIsFrozen = false;
       
-      // 隱藏虛擬標籤與連線
       document.getElementById('arTag1').classList.remove('active');
       document.getElementById('arLines').style.opacity = '0';
 
-      // 恢復鏡頭顯示
       document.getElementById('arSnapshotView').style.display = 'none';
       document.getElementById('arReader').style.display = 'block';
 
-      // 重置 HUD 與掃描引擎
       resetARHUD();
       try { if (arHtml5QrCode) arHtml5QrCode.resume(); } catch(e) {}
   }
